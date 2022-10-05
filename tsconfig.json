@@ -1,0 +1,39 @@
+{
+  /*
+  {
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "Node 16",
+
+    "compilerOptions": {
+      "lib": ["es2021"],
+      "module": "commonjs",
+      "target": "es2021",
+
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "moduleResolution": "node"
+    }
+  }
+  */
+  "extends": "@tsconfig/node16/tsconfig.json",
+
+  "compilerOptions": {
+    "outDir": "./dist",
+    "module": "esnext",
+    "target": "es2015",
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+    "importsNotUsedAsValues": "error",
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "noErrorTruncation": true
+  },
+
+  "include": ["src/**/*.ts"],
+
+  "ts-node": {
+    "esm": true
+  },
+}
