@@ -22,7 +22,7 @@ describe('Schema options', () => {
     const defaultSchemaOptions: SchemaOptions = {
       id: false,
     };
-    const zodSchema = z.object({}).mongoose({});
+    const zodSchema = z.object({}).mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -77,7 +77,7 @@ describe('Schema options', () => {
           ids: z.number().int().array(),
         }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -96,7 +96,7 @@ describe('Schema options', () => {
             schemaOptions: {...subSchemaOptions},
           }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 

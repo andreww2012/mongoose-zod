@@ -9,7 +9,7 @@ describe('Schema shape replication', () => {
         username: z.string(),
         registered: z.boolean(),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -41,7 +41,7 @@ describe('Schema shape replication', () => {
           count: z.number().int(),
         }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -68,7 +68,7 @@ describe('Schema shape replication', () => {
       z.nativeEnum({a: 1, b: 2, c: 3}),
       z.string().brand(),
     ].forEach((zodSchema) => {
-      const Schema = toMongooseSchema(z.object({prop: zodSchema}).mongoose({}));
+      const Schema = toMongooseSchema(z.object({prop: zodSchema}).mongoose());
       expect(Schema.paths.prop).toBeInstanceOf(
         (M.Schema.Types as Record<string, unknown>).MongooseZodUniversalType,
       );
@@ -90,7 +90,7 @@ describe('Schema shape replication', () => {
     ];
 
     typesProducingMixedType.forEach((zodSchema) => {
-      const Schema = toMongooseSchema(z.object({prop: zodSchema}).mongoose({}));
+      const Schema = toMongooseSchema(z.object({prop: zodSchema}).mongoose());
       expect(Schema.paths.prop).toBeInstanceOf(M.Schema.Types.Mixed);
     });
   });
@@ -100,7 +100,7 @@ describe('Schema shape replication', () => {
       .object({
         friends: z.number().array(),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -116,7 +116,7 @@ describe('Schema shape replication', () => {
         friendsFriends: z.number().array().array(),
         matrices: z.number().array().array().array().optional(),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -137,7 +137,7 @@ describe('Schema shape replication', () => {
       .object({
         dict: z.map(z.number(), z.object({a: z.number()})),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -149,7 +149,7 @@ describe('Schema shape replication', () => {
       .object({
         data: zodMongooseCustomType('Buffer'),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -164,7 +164,7 @@ describe('Schema shape replication', () => {
       .object({
         data: zodMongooseCustomType('Long' as any),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -187,7 +187,7 @@ describe('Schema shape replication', () => {
 
     unsupportedZodSchemas.forEach((zodSchema) => {
       expect(() => {
-        toMongooseSchema(z.object({prop: zodSchema}).mongoose({}));
+        toMongooseSchema(z.object({prop: zodSchema}).mongoose());
       }).toThrow(MongooseZodError);
     });
   });

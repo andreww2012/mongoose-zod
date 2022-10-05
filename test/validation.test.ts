@@ -45,7 +45,7 @@ describe('Validation', () => {
   ] as const)(
     'Throws ValidationError if zod validation is not passed for type %s',
     (_, propSchema, value) => {
-      const zodSchema = z.object({a: propSchema}).mongoose({});
+      const zodSchema = z.object({a: propSchema}).mongoose();
 
       const Model = M.model('test', toMongooseSchema(zodSchema));
       const instance = new Model({a: value});
@@ -98,7 +98,7 @@ describe('Validation', () => {
   ] as const)(
     'Does not throw ValidationError if zod validation succeeds for type %s',
     (_, propSchema, value) => {
-      const zodSchema = z.object({a: propSchema}).mongoose({});
+      const zodSchema = z.object({a: propSchema}).mongoose();
 
       const Model = M.model('test', toMongooseSchema(zodSchema));
       const instance = new Model({a: value});
@@ -123,7 +123,7 @@ describe('Validation', () => {
             validate: (value: string) => value.length >= 4,
           }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
     const instance = new Model({firstName: 'N', nickname: 'nick'});
@@ -147,7 +147,7 @@ describe('Validation', () => {
             validate: (value: string) => value.length >= 5,
           }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
     const instance = new Model({firstName: 'Nick', nickname: 'nickname'});
@@ -156,7 +156,7 @@ describe('Validation', () => {
   });
 
   it('Does not perform value casting for numbers', () => {
-    const zodSchema = z.object({a: z.number()}).mongoose({});
+    const zodSchema = z.object({a: z.number()}).mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
 
@@ -179,7 +179,7 @@ describe('Validation', () => {
   });
 
   it('Does not perform value casting for strings', () => {
-    const zodSchema = z.object({a: z.string()}).mongoose({});
+    const zodSchema = z.object({a: z.string()}).mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
 
@@ -202,7 +202,7 @@ describe('Validation', () => {
   });
 
   it('Does not perform value casting for booleans', () => {
-    const zodSchema = z.object({a: z.boolean()}).mongoose({});
+    const zodSchema = z.object({a: z.boolean()}).mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
 
@@ -214,7 +214,7 @@ describe('Validation', () => {
   });
 
   it('Does not perform value casting for dates', () => {
-    const zodSchema = z.object({a: z.date()}).mongoose({});
+    const zodSchema = z.object({a: z.date()}).mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
 
@@ -233,7 +233,7 @@ describe('Validation', () => {
   });
 
   it('Does not cast non-arrays to arrays by default', () => {
-    const zodSchema = z.object({a: z.any().array()}).mongoose({});
+    const zodSchema = z.object({a: z.any().array()}).mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
 
@@ -249,7 +249,7 @@ describe('Validation', () => {
         a: z.any().array().mongooseTypeOptions({castNonArrays: true}),
       })
       .strict()
-      .mongoose({});
+      .mongoose();
 
     const Model = M.model('test', toMongooseSchema(zodSchema));
 

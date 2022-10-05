@@ -31,7 +31,7 @@ describe('Type options', () => {
         username: z.string().mongooseTypeOptions({...USERNAME_OPTIONS}),
         registered: z.boolean().mongooseTypeOptions({...REGISTERED_OPTIONS}),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -85,7 +85,7 @@ describe('Type options', () => {
             },
           }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -103,7 +103,7 @@ describe('Type options', () => {
           registered: z.boolean().mongooseTypeOptions({...REGISTERED_OPTIONS}),
         }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -130,7 +130,7 @@ describe('Type options', () => {
             },
           }),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -152,7 +152,7 @@ describe('Type options', () => {
         regDate: z.date().nullable(),
         friends: z.array(z.string()).optional().nullable(),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -169,7 +169,7 @@ describe('Type options', () => {
         registered: z.boolean().default(false),
         status: z.string().default('ignored').default('ignored again').default(STATUS),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -185,7 +185,7 @@ describe('Type options', () => {
         registered: z.boolean().mongooseTypeOptions({default: false}),
         status: z.string().mongooseTypeOptions({default: STATUS}),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -201,7 +201,7 @@ describe('Type options', () => {
         friends: z.array(z.string()),
         birthday: z.array(z.number().int()).min(3).max(3).default(BIRTHDAY_NOT_SET),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -217,7 +217,7 @@ describe('Type options', () => {
         registered: z.boolean().default(true).mongooseTypeOptions({default: false}),
         status: z.string().default('nonsense').mongooseTypeOptions({default: STATUS}),
       })
-      .mongoose({});
+      .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 

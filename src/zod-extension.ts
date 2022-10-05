@@ -101,7 +101,7 @@ declare module 'zod' {
       TVirtuals extends {} = {},
     >(
       this: O,
-      metadata: MongooseMetadata<
+      metadata?: MongooseMetadata<
         O['_input'],
         TInstanceMethods,
         QueryHelpers,
@@ -113,7 +113,7 @@ declare module 'zod' {
 }
 
 if (!z.ZodObject.prototype.mongoose) {
-  z.ZodObject.prototype.mongoose = function (metadata) {
+  z.ZodObject.prototype.mongoose = function (metadata = {}) {
     return ZodMongoose.create({mongoose: metadata, innerType: this});
   };
 }
