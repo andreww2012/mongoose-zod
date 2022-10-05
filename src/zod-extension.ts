@@ -92,9 +92,11 @@ declare module 'zod' {
     T extends z.ZodRawShape,
     UnknownKeys extends 'passthrough' | 'strict' | 'strip' = 'strip',
     Catchall extends z.ZodTypeAny = z.ZodTypeAny,
+    Output = z.objectOutputType<T, Catchall>,
+    Input = z.objectInputType<T, Catchall>,
   > {
     mongoose: <
-      O extends ZodObject<any, UnknownKeys, Catchall>,
+      O extends ZodObject<T, UnknownKeys, Catchall, Output, Input>,
       TInstanceMethods extends {} = {},
       QueryHelpers extends {} = {},
       TStaticMethods extends {} = {},
@@ -102,13 +104,13 @@ declare module 'zod' {
     >(
       this: O,
       metadata?: MongooseMetadata<
-        O['_input'],
+        O['_output'],
         TInstanceMethods,
         QueryHelpers,
         TStaticMethods,
         TVirtuals
       >,
-    ) => ZodMongoose<O, O['_input'], TInstanceMethods, QueryHelpers, TStaticMethods, TVirtuals>;
+    ) => ZodMongoose<O, O['_output'], TInstanceMethods, QueryHelpers, TStaticMethods, TVirtuals>;
   }
 }
 
