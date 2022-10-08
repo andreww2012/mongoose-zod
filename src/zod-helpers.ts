@@ -74,7 +74,7 @@ export const unwrapZodSchema = (
     });
   }
 
-  if (isZodType(schema, 'ZodOptional') || isZodType(schema, 'ZodNullable')) {
+  if (isZodType(schema, 'ZodOptional')) {
     return unwrapZodSchema(schema.unwrap(), options, {..._properties, isOptional: true});
   }
 
@@ -90,7 +90,7 @@ export const unwrapZodSchema = (
     );
   }
 
-  if (isZodType(schema, 'ZodBranded')) {
+  if (isZodType(schema, 'ZodBranded') || isZodType(schema, 'ZodNullable')) {
     return unwrapZodSchema(schema.unwrap(), options, {..._properties});
   }
 

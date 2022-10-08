@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {toMongooseSchema} from '../src/index.js';
+import {MongooseZodError, toMongooseSchema} from '../src/index.js';
 
 describe('Type options', () => {
   it('Allows to set type options with .mongoose()', () => {
@@ -144,13 +144,13 @@ describe('Type options', () => {
     });
   });
 
-  it('Makes field optional if and only if .optional(), .nullable() or both are used', () => {
+  it('Makes field optional if and only if .optional(), .nullish() or both are used', () => {
     const zodSchema = z
       .object({
         username: z.string(),
         registered: z.boolean().optional(),
-        regDate: z.date().nullable(),
-        friends: z.array(z.string()).optional().nullable(),
+        regDate: z.date().nullish(),
+        friends: z.array(z.string()).optional().nullish().nullable(),
       })
       .mongoose();
 
@@ -223,5 +223,65 @@ describe('Type options', () => {
 
     expect((Schema.paths.registered as any).defaultValue).toBe(false);
     expect((Schema.paths.status as any).defaultValue).toBe(STATUS);
+  });
+
+  it('Throws if field is .optional() but required is set to true', () => {
+    const zodSchema = z
+      .object({
+        username: z.string().optional().mongooseTypeOptions({required: true}),
+      })
+      .mongoose();
+
+    expect(() => toMongooseSchema(zodSchema)).toThrow(MongooseZodError);
+  });
+
+  it('Throws if field is .nullish() but required is set to true', () => {
+    const zodSchema = z
+      .object({
+        username: z.string().nullish().mongooseTypeOptions({required: true}),
+      })
+      .mongoose();
+
+    expect(() => toMongooseSchema(zodSchema)).toThrow(MongooseZodError);
+  });
+
+  it('Does not throw if field is .nullable() but required is set to true', () => {
+    const zodSchema = z
+      .object({
+        username: z.string().nullable().mongooseTypeOptions({required: true}),
+      })
+      .mongoose();
+
+    expect(() => toMongooseSchema(zodSchema)).not.toThrow(MongooseZodError);
+  });
+
+  it('Does not throw if field is .literal(null) but required is set to true', () => {
+    const zodSchema = z
+      .object({
+        username: z.literal(null).mongooseTypeOptions({required: true}),
+      })
+      .mongoose();
+
+    expect(() => toMongooseSchema(zodSchema)).not.toThrow(MongooseZodError);
+  });
+
+  it('Throws if field is not .optional() nor .nullish() but required is set to false', () => {
+    const zodSchema = z
+      .object({
+        username: z.string().mongooseTypeOptions({required: false}),
+      })
+      .mongoose();
+
+    expect(() => toMongooseSchema(zodSchema)).toThrow(MongooseZodError);
+  });
+
+  it('Throws if field is not .optional() nor .nullish() but required is set to function', () => {
+    const zodSchema = z
+      .object({
+        username: z.string().mongooseTypeOptions({required: jest.fn()}),
+      })
+      .mongoose();
+
+    expect(() => toMongooseSchema(zodSchema)).toThrow(MongooseZodError);
   });
 });

@@ -51,6 +51,10 @@ const addMongooseSchemaFields = (
   const fieldPath = fieldsStack.join('.');
   const isRoot = addToField == null;
 
+  const throwError = (message: string, noPath?: boolean) => {
+    throw new MongooseZodError(`${noPath ? '' : `Path \`${fieldPath}\`: `}${message}`);
+  };
+
   const {schema: zodSchemaFinal, properties: schemaProperties} = unwrapZodSchema(zodSchema);
   const monMetadata = schemaProperties.mongoose || {};
 
@@ -70,6 +74,17 @@ const addMongooseSchemaFields = (
     ...monTypeOptions,
   };
   let fieldType: any;
+
+  if (!isRequired) {
+    if (commonFieldOptions.required === true) {
+      throwError("Can't have `required` set to true and `.optional()` used");
+    }
+  } else {
+    // eslint-disable-next-line no-lonely-if
+    if (commonFieldOptions.required !== true) {
+      throwError("Can't have `required` set to anything but true if `.optional()` not used");
+    }
+  }
 
   const {Mixed} = M.Schema.Types;
   let errMsgAddendum = '';
@@ -202,10 +217,7 @@ const addMongooseSchemaFields = (
   // undefined, void, bigint, never, sets, promise, function, lazy, effects
   if (fieldType == null) {
     const typeName = zodSchemaFinal.constructor.name;
-    const errorMessage = `Path \`${fieldPath}\`: ${typeName} type is not supported${
-      errMsgAddendum ? ` (${errMsgAddendum})` : ''
-    }`;
-    throw new MongooseZodError(errorMessage);
+    throwError(`${typeName} type is not supported${errMsgAddendum ? ` (${errMsgAddendum})` : ''}`);
   }
 
   if (schemaProperties.array) {
