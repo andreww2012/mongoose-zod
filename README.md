@@ -42,7 +42,7 @@ export const userZodSchema = z
       friends: z.number().int().min(1).array().optional(),
       // Making the field optional
       status: z.enum(['😊', '😔', '🤔']).optional(),
-      // Use this special method to use special (Buffer, ObjectId, ...) and custom (Long, ...) types
+      // Use this function to use special (Buffer, ObjectId, ...) and custom (Long, ...) types
       avatar: zodMongooseCustomType('Buffer'),
     }),
     // Default values set with zod's .default() are respected
@@ -107,35 +107,6 @@ Since the overarching goal of this library is to simplify working with mongoose 
 
 ## FAQ
 
-### What zod types are supported and how are they mapped to mongoose types?
-
-| zod type                         | mongoose type        |
-| :------------------------------- | :------------------- |
-| `String`                         | our special type     |
-| `Number`                         | ^                    |
-| `Boolean`                        | ^                    |
-| `Date`                           | ^                    |
-| `Literal`                        | ^                    |
-| `NaN`                            | ^                    |
-| `Null`                           | ^                    |
-| `Enum`                           | ^                    |
-| `NativeEnum`                     | ^                    |
-| `Type`                           | `Mixed`              |
-| `TypeAny`                        | ^                    |
-| `Unknown`                        | ^                    |
-| `Record`                         | ^                    |
-| `Union`                          | ^                    |
-| `DiscriminatedUnion`<sup>*</sup> | ^                    |
-| `Intersection`                   | ^                    |
-| `Map`                            | `Map`                |
-| `Any`                            | depends<sup>**</sup> |
-| other types                      | not supported        |
-
-<sup>*</sup> Has nothing to do with `mongoose` discriminated unions.<br>
-<sup>**</sup> A class provided with `zodMongooseCustomType()` or `Mixed` instead.
-
-If a Zod type is not supported, a `MongooseZodError` error will be thrown upon schema creation.
-
 ### How to obtain a schema type and what to do with it?
 
 You have two options:
@@ -174,19 +145,54 @@ const zodSchema = z.object({
 }).mongoose();
 ```
 
-### Don't we still have type safety for options like `alias` and `timestamp`?
+### Don't we still have type safety for options like `alias` and `timestamps`?
 
-Yes, we don't. Instead `timestamp`, merge your schema with a timestamps schema generator exported under the `genTimestampsSchema` name.
+Yes, we don't. Instead `timestamps`, merge your schema with a timestamps schema generator exported under the `genTimestampsSchema` name.
 
 Instead `alias`, simply use a virtual (which is what mongoose aliases actually are).
+
+### What zod types are supported and how are they mapped to mongoose types?
+
+| zod type                                                              | mongoose type        |
+| :-------------------------------------------------------------------- | :------------------- |
+| `Number`, number *finite* literal, native numeric enum, numbers union | `MongooseZodNumber`  |
+| `String`, `Enum`, string literal, native string enum, strings union   | `MongooseZodString`  |
+| `Date`, dates union                                                   | `MongooseZodDate`    |
+| `Boolean`, boolean literal, booleans union                            | `MongooseZodBoolean` |
+| `Map`                                                                 | `Map`                |
+| `NaN`, `NaN` literal                                                  | `Mixed`              |
+| `Null`, `null` literal                                                | ^                    |
+| Heterogeneous<sup>1</sup> `NativeEnum`                                | ^                    |
+| `Unknown`                                                             | ^                    |
+| `Record`                                                              | ^                    |
+| `Union`                                                               | ^                    |
+| `DiscriminatedUnion`<sup>2</sup>                                      | ^                    |
+| `Intersection`                                                        | ^                    |
+| `Type`                                                                | ^                    |
+| `TypeAny`                                                             | ^                    |
+| `Any`                                                                 | depends<sup>3</sup>  |
+| Other types                                                           | not supported        |
+
+<sup>1</sup> Enums with mixed values, e.g. with both string and numbers. Also see [TypeScript docs](https://www.typescriptlang.org/docs/handbook/enums.html#heterogeneous-enums).<br>
+<sup>2</sup> Has nothing to do with mongoose discriminators.<br>
+<sup>3</sup> A class provided with `zodMongooseCustomType()` or `Mixed` instead.
+
+- Types named `MongooseZodBaseClass` are custom types inherited from `BaseClass` with the only function overloaded being `cast` which disables casting altogether.
+- If the zod type is not supported, a `MongooseZodError` error will be thrown upon schema creation.
+- The same error will be thrown when when the zod type as a whole is supported, but this specific case it describes is not. Some examples: `Infinity` number literal, `bigint` literal, empty enums.
 
 ⚠️ Please also see [caveats](#caveats) section.
 
 ## Caveats
 
-### Regular mongoose validators won't work
+### I get the error: `.mongooseTypeOptions/.mongoose is not a function`
 
-Since we use a custom mongoose type for all the primitive zod types, zod enums, as well as zod union of primitives (to disable value casting), "regular" mongoose type-specific validators like `min`, `maxlength` won't have any effects and will be effectively ignored. Validators declared under `validate` property will still work as expected.
+This error indicates that zod extensions this package adds have not been registered yet. This may happen when you've used either of these methods but haven't imported anything from `mongoose-zod`. In this case the best strategy would probably be to **import the package** at the entrypoint of your application like that:
+
+```ts
+import 'mongoose-zod';
+...
+```
 
 ### TS error: can't assign a Buffer to a field having `Buffer` type
 
@@ -194,4 +200,4 @@ That's because this field would have `mongoose.Types.Buffer` type which extends 
 
 ## License
 
-See `LICENSE.md`.
+See LICENSE.md.

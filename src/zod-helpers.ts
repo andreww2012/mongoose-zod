@@ -3,7 +3,7 @@ import {z} from 'zod';
 import type {ZodSchema, ZodTypeAny} from 'zod';
 import {MongooseMetadata, MongooseTypeOptions, ZodMongoose} from './zod-extension.js';
 
-interface ZodTypes {
+export interface ZodTypes {
   ZodAny: z.ZodAny;
   ZodArray: z.ZodArray<any>;
   ZodBigInt: z.ZodBigInt;

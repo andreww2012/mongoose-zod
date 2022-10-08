@@ -2,6 +2,21 @@ import M from 'mongoose';
 import {z} from 'zod';
 import {MongooseZodError, toMongooseSchema, zodMongooseCustomType} from '../src/index.js';
 
+enum TestStringEnum {
+  a = 'A',
+  b = 'B',
+}
+
+enum TestNumericEnum {
+  a = 1,
+  b = 2,
+}
+
+enum TestMixedEnum {
+  a = 'A',
+  b = 2,
+}
+
 describe('Schema shape replication', () => {
   it('Creates a mongoose schema based on fields provided in a Zod schema', () => {
     const zodSchema = z
@@ -54,29 +69,51 @@ describe('Schema shape replication', () => {
     );
   });
 
-  it('Assigns special `MongooseZodUniversalType` type for primitives or unions of primitives', () => {
-    [
-      z.string(),
-      z.number(),
-      z.boolean(),
-      z.date(),
-      z.literal(42),
-      z.nan(),
-      z.null(),
-      z.union([z.string(), z.number(), z.boolean(), z.date(), z.literal(42), z.nan(), z.null()]),
-      z.enum(['a', 'b', 'c']),
-      z.nativeEnum({a: 1, b: 2, c: 3}),
-      z.string().brand(),
-    ].forEach((zodSchema) => {
-      const Schema = toMongooseSchema(z.object({prop: zodSchema}).mongoose());
-      expect(Schema.paths.prop).toBeInstanceOf(
-        (M.Schema.Types as Record<string, unknown>).MongooseZodUniversalType,
-      );
-    });
+  it.each([
+    {zodType: 'number', schema: z.number(), type: 'Number'},
+    {zodType: 'string', schema: z.string(), type: 'String'},
+    {zodType: 'date', schema: z.date(), type: 'Date'},
+    {zodType: 'boolean', schema: z.boolean(), type: 'Boolean'},
+    {zodType: 'string literal', schema: z.literal('hi'), type: 'String'},
+    {zodType: 'number literal', schema: z.literal(42), type: 'Number'},
+    {zodType: 'boolean literal', schema: z.literal(false), type: 'Boolean'},
+    {zodType: 'zod enum', schema: z.enum(['a', 'b', 'c']), type: 'String'},
+    {zodType: 'string native enum', schema: z.nativeEnum(TestStringEnum), type: 'String'},
+    {zodType: 'numeric native enum', schema: z.nativeEnum(TestNumericEnum), type: 'Number'},
+    {zodType: 'branded string', schema: z.string().brand(), type: 'String'},
+    {
+      zodType: 'union of numbers',
+      schema: z.union([z.number().min(5), z.number().max(1)]),
+      type: 'Number',
+    },
+    {
+      zodType: 'union of strings',
+      schema: z.union([z.string().min(5), z.string().max(1)]),
+      type: 'String',
+    },
+    {
+      zodType: 'union of dates',
+      schema: z.union([z.date().min(new Date(5)), z.date().min(new Date(1))]),
+      type: 'Date',
+    },
+    {
+      zodType: 'union of booleans',
+      schema: z.union([z.boolean(), z.boolean()]),
+      type: 'Boolean',
+    },
+  ])('Assigns `MongooseZod$type` mongoose type if zod type is $zodType', ({schema, type}) => {
+    const Schema = toMongooseSchema(z.object({prop: schema}).mongoose());
+    expect(Schema.paths.prop).toBeInstanceOf(
+      (M.Schema.Types as Record<string, unknown>)[`MongooseZod${type}`],
+    );
   });
 
   it('Assigns Mixed type for complex types', () => {
     const typesProducingMixedType = [
+      z.nativeEnum(TestMixedEnum),
+      z.nan(),
+      z.literal(Number.NaN),
+      z.null(),
       z.any(),
       z.unknown(),
       z.record(z.number()),
@@ -173,6 +210,14 @@ describe('Schema shape replication', () => {
 
   it('Throws when unsupported zod type is used', () => {
     const unsupportedZodSchemas = [
+      z.enum([] as any),
+      z.enum([1, '2'] as any),
+      z.nativeEnum({a: true, b: 2} as any),
+      z.literal(Number.POSITIVE_INFINITY),
+      z.literal(Number.NEGATIVE_INFINITY),
+      z.literal(undefined),
+      z.literal(1n),
+      z.literal(Symbol.for('') as any),
       z.undefined(),
       z.void(),
       z.bigint(),
