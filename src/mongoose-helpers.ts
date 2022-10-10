@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import type {ZodMongoose} from './zod-extension';
 
 type StringLiteral<T> = T extends string ? (string extends T ? never : T) : never;
 
@@ -15,3 +16,22 @@ export const genTimestampsSchema = <CrAt, UpAt>(
   } as {
     [_ in StringLiteral<CrAt | UpAt>]: z.ZodDefault<z.ZodDate>;
   });
+
+export type MongooseSchemaTypeParameters<
+  T,
+  Parameter extends 'InstanceMethods' | 'QueryHelpers' | 'TStaticMethods' | 'TVirtuals',
+> = T extends ZodMongoose<
+  any,
+  any,
+  infer InstanceMethods,
+  infer QueryHelpers,
+  infer TStaticMethods,
+  infer TVirtuals
+>
+  ? {
+      InstanceMethods: InstanceMethods;
+      QueryHelpers: QueryHelpers;
+      TStaticMethods: TStaticMethods;
+      TVirtuals: TVirtuals;
+    }[Parameter]
+  : {};

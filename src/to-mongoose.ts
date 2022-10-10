@@ -2,6 +2,7 @@ import M, {Schema as MongooseSchema, SchemaOptions, SchemaTypeOptions} from 'mon
 import type z from 'zod';
 import type {ZodSchema} from 'zod';
 import {MongooseZodError} from './errors.js';
+import type {MongooseSchemaTypeParameters} from './mongoose-helpers.js';
 import {getValidEnumValues} from './utils.js';
 import {ZodMongoose} from './zod-extension.js';
 import {ZodTypes, isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
@@ -63,6 +64,22 @@ const addMongooseSchemaFields = (
 
   const isRequired = !schemaProperties.isOptional && !isZodType(zodSchemaFinal, 'ZodNull');
   const isFieldArray = 'array' in schemaProperties;
+
+  const mzOptions = [
+    ['validate', monTypeOptions.mzValidate],
+    ['required', monTypeOptions.mzRequired],
+  ] as const;
+  mzOptions.forEach(([origName]) => {
+    const mzName = `mz${origName[0]?.toUpperCase()}${origName.slice(1)}`;
+    if (mzName in monTypeOptions) {
+      if (origName in monTypeOptions) {
+        throwError(`Can't have both "${mzName}" and "${origName}" set`);
+      }
+      monTypeOptions[origName] = monTypeOptions[mzName];
+      delete monTypeOptions[mzName];
+    }
+  });
+
   const commonFieldOptions: SchemaTypeOptions<any> = {
     required: isRequired,
     ...('default' in schemaProperties
@@ -73,7 +90,41 @@ const addMongooseSchemaFields = (
     ...(isFieldArray && {castNonArrays: false}),
     ...monTypeOptions,
   };
-  let fieldType: any;
+
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  const getFixedOptionFn = (fn: Function) =>
+    function (this: unknown, ...args: any[]) {
+      const thisFixed = this && this instanceof M.Document ? this : undefined;
+      return fn.apply(thisFixed, args);
+    };
+  const [[, mzValidate], [, mzRequired]] = mzOptions;
+
+  if (mzValidate != null) {
+    let mzv = mzValidate;
+    if (typeof mzv === 'function') {
+      mzv = getFixedOptionFn(mzv);
+    } else if (!Array.isArray(mzv) && typeof mzv === 'object' && !(mzv instanceof RegExp)) {
+      mzv.validator = getFixedOptionFn(mzv.validator);
+    } else if (Array.isArray(mzv) && !(mzv[0] instanceof RegExp && typeof mzv[1] === 'string')) {
+      const [firstElem, secondElem] = mzv;
+      if (typeof firstElem === 'function' && typeof secondElem === 'string') {
+        commonFieldOptions.mzValidate = [getFixedOptionFn(firstElem), secondElem];
+      }
+    }
+    commonFieldOptions.validate = mzv;
+  }
+  if (mzRequired != null) {
+    let mzr = mzRequired;
+    if (typeof mzr === 'function') {
+      mzr = getFixedOptionFn(mzr);
+    } else if (Array.isArray(mzr) && typeof mzr[0] === 'function') {
+      const [probablyFn] = mzr;
+      if (typeof probablyFn === 'function') {
+        mzr[0] = getFixedOptionFn(probablyFn);
+      }
+    }
+    commonFieldOptions.required = mzr;
+  }
 
   if (!isRequired) {
     if (commonFieldOptions.required === true) {
@@ -87,6 +138,7 @@ const addMongooseSchemaFields = (
   }
 
   const {Mixed} = M.Schema.Types;
+  let fieldType: any;
   let errMsgAddendum = '';
 
   let unionSchemaType: keyof ZodTypes | undefined;
@@ -254,25 +306,6 @@ const addMongooseSchemaFields = (
   });
 };
 
-type MongooseSchemaTypeParameters<
-  T,
-  Parameter extends 'InstanceMethods' | 'QueryHelpers' | 'TStaticMethods' | 'TVirtuals',
-> = T extends ZodMongoose<
-  any,
-  any,
-  infer InstanceMethods,
-  infer QueryHelpers,
-  infer TStaticMethods,
-  infer TVirtuals
->
-  ? {
-      InstanceMethods: InstanceMethods;
-      QueryHelpers: QueryHelpers;
-      TStaticMethods: TStaticMethods;
-      TVirtuals: TVirtuals;
-    }[Parameter]
-  : {};
-
 export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(rootZodSchema: Schema) => {
   if (!(rootZodSchema instanceof ZodMongoose)) {
     throw new MongooseZodError('Root schema must be an instance of ZodMongoose');
@@ -288,13 +321,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(rootZodSc
     MongooseSchemaTypeParameters<Schema, 'QueryHelpers'>,
     Partial<MongooseSchemaTypeParameters<Schema, 'TVirtuals'>>,
     MongooseSchemaTypeParameters<Schema, 'TStaticMethods'>
-  >(
-    {},
-    {
-      id: false,
-      ...schemaOptions,
-    },
-  );
+  >({}, {id: false, ...schemaOptions});
 
   addMongooseSchemaFields(rootZodSchema, schema, {monSchemaOptions: schemaOptions});
 
