@@ -82,7 +82,10 @@ declare module 'zod' {
   }
 
   interface ZodSchema {
-    mongooseTypeOptions<T extends ZodSchema<any>>(this: T, options: SchemaTypeOptions<any>): T;
+    mongooseTypeOptions<T extends ZodSchema<any>>(
+      this: T,
+      options: SchemaTypeOptions<T['_output']>,
+    ): T;
   }
 
   interface ZodObject<
