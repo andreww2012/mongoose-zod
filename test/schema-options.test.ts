@@ -18,9 +18,10 @@ describe('Schema options', () => {
     expect((Schema as any)._userProvidedOptions).toMatchObject(schemaOptions);
   });
 
-  it('Sets `id: false` by default in schema options', () => {
+  it('Sets `id: false` and `minimize: false` by default in schema options', () => {
     const defaultSchemaOptions: SchemaOptions = {
       id: false,
+      minimize: false,
     };
     const zodSchema = z.object({}).mongoose();
 
@@ -59,6 +60,7 @@ describe('Schema options', () => {
   it('Allows to override pre-set schema options and respects them', () => {
     const schemaOptions: SchemaOptions = {
       id: true,
+      minimize: true,
       collection: 'test-collection',
     };
     const zodSchema = z.object({}).mongoose({

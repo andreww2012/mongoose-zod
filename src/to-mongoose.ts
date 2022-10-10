@@ -298,7 +298,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(rootZodSc
     MongooseSchemaTypeParameters<Schema, 'QueryHelpers'>,
     Partial<MongooseSchemaTypeParameters<Schema, 'TVirtuals'>>,
     MongooseSchemaTypeParameters<Schema, 'TStaticMethods'>
-  >({}, {id: false, ...schemaOptions});
+  >({}, {id: false, minimize: false, ...schemaOptions});
 
   addMongooseSchemaFields(rootZodSchema, schema, {monSchemaOptions: schemaOptions});
 
