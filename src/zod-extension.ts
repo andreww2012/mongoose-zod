@@ -1,8 +1,6 @@
 import type {SchemaOptions, SchemaTypeOptions} from 'mongoose';
 import {z} from 'zod';
-
-// Doesn't produce `& Partial<{}>` in resulting type if T has no keys
-type PartialLaconic<T> = {} extends T ? {} : Partial<T>;
+import type {PartialLaconic} from './utils';
 
 export const MongooseTypeOptions = Symbol.for('MongooseTypeOptions');
 
@@ -111,51 +109,6 @@ declare module 'zod' {
         TVirtuals
       >,
     ) => ZodMongoose<O, O['_output'], TInstanceMethods, QueryHelpers, TStaticMethods, TVirtuals>;
-  }
-}
-
-declare module 'mongoose' {
-  interface MZValidateFn<T, ThisType> {
-    (this: ThisType, value: T): boolean;
-  }
-
-  interface MZLegacyAsyncValidateFn<T, ThisType> {
-    (this: ThisType, value: T, done: (result: boolean) => void): void;
-  }
-
-  interface MZAsyncValidateFn<T, ThisType> {
-    (this: ThisType, value: T): Promise<boolean>;
-  }
-
-  interface MZValidateOpts<T, ThisType> {
-    msg?: string;
-    message?: string | ValidatorMessageFn;
-    type?: string;
-    validator:
-      | MZValidateFn<T, ThisType>
-      | MZLegacyAsyncValidateFn<T, ThisType>
-      | MZAsyncValidateFn<T, ThisType>;
-  }
-
-  type MZSchemaValidator<T, ThisType> =
-    | RegExp
-    | [RegExp, string]
-    | MZValidateFn<T, ThisType>
-    | [MZValidateFn<T, ThisType>, string]
-    | MZValidateOpts<T, ThisType>;
-
-  interface MZRequiredFn<ThisType> {
-    (this: ThisType): boolean;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  interface SchemaTypeOptions<T, ThisType = any> {
-    mzValidate?: MZSchemaValidator<Exclude<T, undefined>, ThisType | undefined>;
-    mzRequired?:
-      | boolean
-      | MZRequiredFn<ThisType | null>
-      | [boolean, string]
-      | [MZRequiredFn<ThisType | null>, string];
   }
 }
 

@@ -2,39 +2,16 @@ import M, {Schema as MongooseSchema, SchemaOptions, SchemaTypeOptions} from 'mon
 import type z from 'zod';
 import type {ZodSchema} from 'zod';
 import {MongooseZodError} from './errors.js';
-import type {MongooseSchemaTypeParameters} from './mongoose-helpers.js';
-import {getValidEnumValues} from './utils.js';
-import {ZodMongoose} from './zod-extension.js';
-import {ZodTypes, isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
-
-const noCastFn = (value: any) => value;
-
-class MongooseZodBoolean extends M.SchemaTypes.Boolean {
-  static schemaName = 'MongooseZodBoolean' as 'Boolean';
-  cast = noCastFn;
-}
-
-class MongooseZodDate extends M.SchemaTypes.Date {
-  static schemaName = 'MongooseZodDate' as 'Date';
-  cast = noCastFn;
-}
-
-class MongooseZodNumber extends M.SchemaTypes.Number {
-  static schemaName = 'MongooseZodNumber' as 'Number';
-  cast = noCastFn;
-}
-
-class MongooseZodString extends M.SchemaTypes.String {
-  static schemaName = 'MongooseZodString' as 'String';
-  cast = noCastFn;
-}
-
-Object.assign(M.Schema.Types, {
+import {
   MongooseZodBoolean,
   MongooseZodDate,
   MongooseZodNumber,
   MongooseZodString,
-});
+} from './mongoose-extension.js';
+import type {MongooseSchemaTypeParameters} from './mongoose-helpers.js';
+import {getValidEnumValues} from './utils.js';
+import {ZodMongoose} from './zod-extension.js';
+import {ZodTypes, isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
 
 const addMongooseSchemaFields = (
   zodSchema: z.ZodSchema,

@@ -34,6 +34,9 @@
   "include": ["src/**/*.ts"],
 
   "ts-node": {
-    "esm": true
+    "esm": true,
+    "compilerOptions": {
+      "target": "es2017"
+    }
   },
 }

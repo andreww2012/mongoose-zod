@@ -7,3 +7,6 @@ export const getValidEnumValues = (obj: any) => {
   }
   return Object.values(filtered);
 };
+
+// Doesn't produce `& Partial<{}>` in resulting type if T has no keys
+export type PartialLaconic<T> = {} extends T ? {} : Partial<T>;
