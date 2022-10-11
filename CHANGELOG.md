@@ -1,3 +1,8 @@
+## 0.0.5
+
+- Fix the issue resulting in fields with custom types set via `mongooseZodCustomType` still having `Mixed` type in the resulting schema.
+- Fields assigned a `Buffer` mongoose type now have a native `Buffer` TypeScript type.
+
 ## 0.0.4
 
 - Fix ESM & DTS outputs.
