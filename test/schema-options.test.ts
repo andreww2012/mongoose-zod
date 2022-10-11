@@ -18,7 +18,7 @@ describe('Schema options', () => {
     expect((Schema as any)._userProvidedOptions).toMatchObject(schemaOptions);
   });
 
-  it('Sets `id: false` and `minimize: false` by default in schema options', () => {
+  it('Sets `id: false`, `minimize: false` and a custom `lean` query method implementation in schema options by default', () => {
     const defaultSchemaOptions: SchemaOptions = {
       id: false,
       minimize: false,
@@ -29,8 +29,9 @@ describe('Schema options', () => {
 
     const schemaUserProvidedOptions = (Schema as any)._userProvidedOptions;
     expect(schemaUserProvidedOptions).toMatchObject(defaultSchemaOptions);
+    expect(schemaUserProvidedOptions.query?.lean).not.toBeUndefined();
     expect(Object.keys(schemaUserProvidedOptions)).toHaveLength(
-      Object.keys(defaultSchemaOptions).length,
+      Object.keys(defaultSchemaOptions).length + 1,
     );
   });
 
