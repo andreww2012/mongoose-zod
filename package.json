@@ -76,6 +76,7 @@
     "mongoose-lean-virtuals": "^0.9.1",
     "mongoose-long": "^0.5.1",
     "prettier": "^2.7.1",
+    "release-it": "^15.5.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^29.0.3",
     "ts-jest-mock-import-meta": "^0.12.0",
