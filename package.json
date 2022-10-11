@@ -11,7 +11,7 @@
     "test:unit": "jest",
     "test:unit:watch": "jest --watch",
     "test": "npm run lint && npm run test:unit",
-    "build": "tsup src/index.ts --dts --treeshake",
+    "build": "rimraf dist && tsup src/index.ts --dts --treeshake --format esm,cjs",
     "prepublishOnly": "npm run test && npm run build"
   },
   "homepage": "https://github.com/andreww2012/mongoose-zod",
@@ -76,6 +76,7 @@
     "mongoose-lean-virtuals": "^0.9.1",
     "mongoose-long": "^0.5.1",
     "prettier": "^2.7.1",
+    "rimraf": "^3.0.2",
     "ts-jest": "^29.0.3",
     "ts-jest-mock-import-meta": "^0.12.0",
     "ts-node": "^10.9.1",

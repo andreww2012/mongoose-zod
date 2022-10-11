@@ -1,7 +1,7 @@
 import M from 'mongoose';
 import {z} from 'zod';
 import type {ZodSchema, ZodTypeAny} from 'zod';
-import {MongooseMetadata, MongooseTypeOptions, ZodMongoose} from './zod-extension.js';
+import {MongooseMetadata, MongooseTypeOptions, ZodMongoose} from './extensions.js';
 
 export interface ZodTypes {
   ZodAny: z.ZodAny;

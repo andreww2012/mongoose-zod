@@ -2,16 +2,19 @@ import M, {Schema as MongooseSchema, SchemaOptions, SchemaTypeOptions} from 'mon
 import type z from 'zod';
 import type {ZodSchema} from 'zod';
 import {MongooseZodError} from './errors.js';
+import {ZodMongoose} from './extensions.js';
 import {
+  MongooseSchemaTypeParameters,
   MongooseZodBoolean,
   MongooseZodDate,
   MongooseZodNumber,
   MongooseZodString,
-} from './mongoose-extension.js';
-import type {MongooseSchemaTypeParameters} from './mongoose-helpers.js';
+  registerCustomMongooseZodTypes,
+} from './mongoose-helpers.js';
 import {getValidEnumValues, tryImportModule} from './utils.js';
-import {ZodMongoose} from './zod-extension.js';
 import {ZodTypes, isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
+
+registerCustomMongooseZodTypes();
 
 const addMongooseSchemaFields = (
   zodSchema: z.ZodSchema,
