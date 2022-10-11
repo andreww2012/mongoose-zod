@@ -121,6 +121,48 @@ You can use special `validate` and `required` type options alternatives we provi
 - You can't define `validate` and `mzValidate` (and the other one) simultaneously. The error will be thrown upon schema creation if both say `required` and `mzRequired` are present.
 - `Schema.validate()` calls that register additional validators **won't** be type safe.
 
+### Certain plugins are automatically added to schemas if found
+
+If the following plugins are installed, they will be automatically registered on every schema you create with mongoose-zod:
+- [`mongoose-lean-virtuals`](https://github.com/vkarpov15/mongoose-lean-virtuals)
+- [`mongoose-lean-defaults`](https://github.com/douglasgabr/mongoose-lean-defaults)
+- [`mongoose-lean-getters`](https://github.com/vkarpov15/mongoose-lean-getters)
+
+You can opt out of this behaviour when creating a schema in the following manner:
+
+```ts
+const Schema = toMongooseSchema( ... , {
+  disablePlugins: {
+    leanVirtuals: true,
+    leanDefaults: true,
+    leanGetters: true,
+  },
+});
+```
+
+The most intriguing thing is that you *won't have to explicitly make them work on every .lean() call*:
+
+```ts
+const user = await User.findOne({ ... }).lean();
+// is equivalent to (if respective plugins are installed):
+const user = await User.findOne({ ... }).lean({
+  virtuals: true,
+  defaults: true,
+  getters: true,
+  // Bonus: this is set regardless of plugins
+  versionKey: false,
+});
+```
+
+You can **override** certain options if you wish:
+
+```ts
+// If `mongoose-lean-getters` is installed, `getters: true` will still be implicitly set
+const user = await User.findOne({ ... }).lean({ virtuals: false, anyOtherOption: true });
+```
+
+Note: if you pass to .lean() anything but an object or null, these options won't be set.
+
 ## FAQ
 
 ### What is the recommended way of defining type options?

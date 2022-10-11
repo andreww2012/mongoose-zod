@@ -287,6 +287,8 @@ const mlvPlugin = tryImportModule('mongoose-lean-virtuals', import.meta);
 const mldPlugin = tryImportModule('mongoose-lean-defaults', import.meta);
 const mlgPlugin = tryImportModule('mongoose-lean-getters', import.meta);
 
+const originalLean = M.Query.prototype.lean;
+
 export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
   rootZodSchema: Schema,
   options: {
@@ -304,6 +306,11 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
   const metadata = rootZodSchema._def;
   const schemaOptions = metadata?.mongoose.schemaOptions;
 
+  const dp = options?.disablePlugins;
+  const addMLVPlugin = mlvPlugin && !dp?.leanVirtuals;
+  const addMLDPlugin = mldPlugin && !dp?.leanDefaults;
+  const addMLGPlugin = mlgPlugin && !dp?.leanGetters;
+
   const schema = new MongooseSchema<
     z.infer<Schema>,
     any,
@@ -311,14 +318,37 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
     MongooseSchemaTypeParameters<Schema, 'QueryHelpers'>,
     Partial<MongooseSchemaTypeParameters<Schema, 'TVirtuals'>>,
     MongooseSchemaTypeParameters<Schema, 'TStaticMethods'>
-  >({}, {id: false, minimize: false, ...schemaOptions});
+  >(
+    {},
+    {
+      id: false,
+      minimize: false,
+      ...schemaOptions,
+      query: {
+        lean(leanOptions?: any) {
+          return originalLean.call(
+            this,
+            typeof leanOptions === 'object' || leanOptions == null
+              ? {
+                  ...(addMLVPlugin && {virtuals: true}),
+                  ...(addMLDPlugin && {defaults: true}),
+                  ...(addMLGPlugin && {getters: true}),
+                  versionKey: false,
+                  ...leanOptions,
+                }
+              : leanOptions,
+          );
+        },
+        ...schemaOptions?.query,
+      },
+    },
+  );
 
   addMongooseSchemaFields(rootZodSchema, schema, {monSchemaOptions: schemaOptions});
 
-  const dp = options?.disablePlugins;
-  mlvPlugin && !dp?.leanVirtuals && schema.plugin(mlvPlugin.module);
-  mldPlugin && !dp?.leanDefaults && schema.plugin(mldPlugin.module?.default);
-  mlgPlugin && !dp?.leanGetters && schema.plugin(mlgPlugin.module);
+  addMLVPlugin && schema.plugin(mlvPlugin.module);
+  addMLDPlugin && schema.plugin(mldPlugin.module?.default);
+  addMLGPlugin && schema.plugin(mlgPlugin.module);
 
   return schema;
 };
