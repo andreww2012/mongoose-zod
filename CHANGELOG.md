@@ -1,3 +1,4 @@
+## 0.0.7
 ## 0.0.6
 
 - Fixed an erroneous sub schema validation error if one of its fields has `Buffer` type.
