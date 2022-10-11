@@ -119,7 +119,9 @@ export const mongooseZodCustomType = <T extends keyof typeof M.Types & keyof typ
   typeName: T,
   params?: Parameters<ZodTypeAny['refine']>[1],
 ) => {
-  const instanceClass = M.Types[typeName];
+  // `mongoose.Types.Buffer` or `Buffer` produce validation error when
+  // sub schema is validated as a whole via zod
+  const instanceClass = typeName === 'Buffer' ? M.mongo.Binary : M.Types[typeName];
   const typeClass = M.Schema.Types[typeName];
 
   type TFixed = T extends 'Buffer' ? BufferConstructor : typeof M.Types[T];

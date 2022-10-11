@@ -129,8 +129,6 @@ if (!z.ZodType.prototype.mongooseTypeOptions) {
 }
 
 declare module 'mongoose' {
-  const wefwfwfwefwefwe: boolean;
-
   interface MZValidateFn<T, ThisType> {
     (this: ThisType, value: T): boolean;
   }

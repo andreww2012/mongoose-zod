@@ -73,4 +73,21 @@ describe('Mongoose types', () => {
 
     expect(doc?.data).toBeInstanceOf(Buffer);
   });
+
+  it('Allows to work with Buffer type in sub schemas', async () => {
+    const Model = M.model(
+      'test',
+      toMongooseSchema(z.object({a: z.object({data: mongooseZodCustomType('Buffer')})}).mongoose()),
+    );
+
+    const docRaw = new Model();
+    docRaw.a = {data: Buffer.from('Hello world!')};
+
+    expect(docRaw.a.data).toBeInstanceOf(Buffer);
+
+    await docRaw.save();
+    const doc = await Model.findOne({_id: docRaw._id});
+
+    expect(doc?.a.data).toBeInstanceOf(Buffer);
+  });
 });
