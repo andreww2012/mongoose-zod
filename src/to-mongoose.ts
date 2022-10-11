@@ -9,7 +9,7 @@ import {
   MongooseZodString,
 } from './mongoose-extension.js';
 import type {MongooseSchemaTypeParameters} from './mongoose-helpers.js';
-import {getValidEnumValues} from './utils.js';
+import {getValidEnumValues, tryImportModule} from './utils.js';
 import {ZodMongoose} from './zod-extension.js';
 import {ZodTypes, isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
 
@@ -283,7 +283,20 @@ const addMongooseSchemaFields = (
   });
 };
 
-export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(rootZodSchema: Schema) => {
+const mlvPlugin = tryImportModule('mongoose-lean-virtuals', import.meta);
+const mldPlugin = tryImportModule('mongoose-lean-defaults', import.meta);
+const mlgPlugin = tryImportModule('mongoose-lean-getters', import.meta);
+
+export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
+  rootZodSchema: Schema,
+  options: {
+    disablePlugins?: {
+      leanVirtuals?: boolean;
+      leanDefaults?: boolean;
+      leanGetters?: boolean;
+    };
+  } = {},
+) => {
   if (!(rootZodSchema instanceof ZodMongoose)) {
     throw new MongooseZodError('Root schema must be an instance of ZodMongoose');
   }
@@ -301,6 +314,11 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(rootZodSc
   >({}, {id: false, minimize: false, ...schemaOptions});
 
   addMongooseSchemaFields(rootZodSchema, schema, {monSchemaOptions: schemaOptions});
+
+  const dp = options?.disablePlugins;
+  mlvPlugin && !dp?.leanVirtuals && schema.plugin(mlvPlugin.module);
+  mldPlugin && !dp?.leanDefaults && schema.plugin(mldPlugin.module?.default);
+  mlgPlugin && !dp?.leanGetters && schema.plugin(mlgPlugin.module);
 
   return schema;
 };
