@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Fix ESM & DTS outputs.
+
 ## 0.0.3
 
 - Add type-safe alternatives for `validate`/`required` type options: `mzValidate` and `mzRequired`.
