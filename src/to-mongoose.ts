@@ -221,8 +221,7 @@ const addMongooseSchemaFields = (
   } else if (isZodType(zodSchemaFinal, 'ZodMap')) {
     fieldType = Map;
   } else if (isZodType(zodSchemaFinal, 'ZodAny')) {
-    // Note: the key is the original schema, not unwrapped
-    const instanceOfClass = zodInstanceofOriginalClasses.get(zodSchema);
+    const instanceOfClass = zodInstanceofOriginalClasses.get(zodSchemaFinal);
     fieldType = instanceOfClass || Mixed;
   } else if (isZodType(zodSchemaFinal, 'ZodEffects')) {
     // `refinement` effects are already unwrapped at this stage

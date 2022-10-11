@@ -3,7 +3,7 @@ import M from 'mongoose';
 import {z} from 'zod';
 import {mongooseZodCustomType, toMongooseSchema} from '../src/index.js';
 
-describe('Using MongoDB operators', () => {
+describe('Mongoose types', () => {
   let mongoServer: MongoMemoryServer;
 
   beforeAll(async () => {
@@ -56,4 +56,21 @@ describe('Using MongoDB operators', () => {
       expect(error).toBe(undefined);
     },
   );
+
+  it('Allows to work with Buffer type', async () => {
+    const Model = M.model(
+      'test',
+      toMongooseSchema(z.object({data: mongooseZodCustomType('Buffer')}).mongoose()),
+    );
+
+    const docRaw = new Model();
+    docRaw.data = Buffer.from('Hello world!');
+
+    expect(docRaw.data).toBeInstanceOf(Buffer);
+
+    await docRaw.save();
+    const doc = await Model.findOne({_id: docRaw._id});
+
+    expect(doc?.data).toBeInstanceOf(Buffer);
+  });
 });

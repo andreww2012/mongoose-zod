@@ -258,10 +258,6 @@ import 'mongoose-zod';
 ...
 ```
 
-### TS error: can't assign a Buffer to a field having `Buffer` type
-
-That's because this field would have `mongoose.Types.Buffer` type which extends the native `Buffer`. Just use `as mongoose.Types.Buffer` after the expression you assign to such a field.
-
 ## License
 
 See LICENSE.md.
