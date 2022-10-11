@@ -115,7 +115,7 @@ export const unwrapZodSchema = (
 
 export const zodInstanceofOriginalClasses = new WeakMap<ZodTypeAny, new (...args: any[]) => any>();
 
-export const zodMongooseCustomType = <T extends keyof typeof M.Types & keyof typeof M.Schema.Types>(
+export const mongooseZodCustomType = <T extends keyof typeof M.Types & keyof typeof M.Schema.Types>(
   typeName: T,
   params?: Parameters<ZodTypeAny['refine']>[1],
 ) => {

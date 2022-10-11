@@ -31,7 +31,7 @@ Then, define a schema and use it as follows:
 
 ```ts
 import {z} from 'zod';
-import {genTimestampsSchema, toMongooseSchema, zodMongooseCustomType} from 'mongoose-zod';
+import {genTimestampsSchema, toMongooseSchema, mongooseZodCustomType} from 'mongoose-zod';
 
 export const userZodSchema = z
   .object({
@@ -49,7 +49,7 @@ export const userZodSchema = z
       // Making the field optional
       status: z.enum(['😊', '😔', '🤔']).optional(),
       // Use this function to use special (Buffer, ObjectId, ...) and custom (Long, ...) types
-      avatar: zodMongooseCustomType('Buffer'),
+      avatar: mongooseZodCustomType('Buffer'),
     }),
     // Default values set with zod's .default() are respected
     regDate: z.date().default(new Date()),
@@ -199,15 +199,15 @@ import type {IUser} from '<...>/user.model';
 
 ### How to use special types like `Buffer`, `ObjectId`, `Decimal128` or custom ones like `Long`?
 
-Use a *stand-alone* function called `zodMongooseCustomType`.
+Use a *stand-alone* function called `mongooseZodCustomType`.
 
 ```ts
 import {z} from 'zod';
-import {zodMongooseCustomType} from 'mongoose-zod';
+import {mongooseZodCustomType} from 'mongoose-zod';
 
 const zodSchema = z.object({
-  refs: zodMongooseCustomType('ObjectId').array(),
-  data: zodMongooseCustomType('Buffer').optional(),
+  refs: mongooseZodCustomType('ObjectId').array(),
+  data: mongooseZodCustomType('Buffer').optional(),
 }).mongoose();
 ```
 
@@ -241,7 +241,7 @@ Instead `alias`, simply use a virtual (which is what mongoose aliases actually a
 
 <sup>1</sup> Enums with mixed values, e.g. with both string and numbers. Also see [TypeScript docs](https://www.typescriptlang.org/docs/handbook/enums.html#heterogeneous-enums).<br>
 <sup>2</sup> Has nothing to do with mongoose discriminators.<br>
-<sup>3</sup> A class provided with `zodMongooseCustomType()` or `Mixed` instead.
+<sup>3</sup> A class provided with `mongooseZodCustomType()` or `Mixed` instead.
 
 - Types named `MongooseZodBaseClass` are custom types inherited from `BaseClass` with the only function overloaded being `cast` which disables casting altogether.
 - If the zod type is not supported, a `MongooseZodError` error will be thrown upon schema creation.

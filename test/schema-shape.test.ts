@@ -1,6 +1,6 @@
 import M from 'mongoose';
 import {z} from 'zod';
-import {MongooseZodError, toMongooseSchema, zodMongooseCustomType} from '../src/index.js';
+import {MongooseZodError, mongooseZodCustomType, toMongooseSchema} from '../src/index.js';
 
 enum TestStringEnum {
   a = 'A',
@@ -181,10 +181,10 @@ describe('Schema shape replication', () => {
     expect(Schema.paths.dict).toBeInstanceOf(M.Schema.Types.Map);
   });
 
-  it('Assigns custom built-in Buffer type when set with `zodMongooseCustomType()`', () => {
+  it('Assigns custom built-in Buffer type when set with `mongooseZodCustomType()`', () => {
     const zodSchema = z
       .object({
-        data: zodMongooseCustomType('Buffer'),
+        data: mongooseZodCustomType('Buffer'),
       })
       .mongoose();
 
@@ -193,13 +193,13 @@ describe('Schema shape replication', () => {
     expect(Schema.paths.data).toBeInstanceOf(M.Schema.Types.Buffer);
   });
 
-  it('Assigns custom external Long type when set with `zodMongooseCustomType()`', () => {
+  it('Assigns custom external Long type when set with `mongooseZodCustomType()`', () => {
     // eslint-disable-next-line global-require
     require('mongoose-long')(M);
 
     const zodSchema = z
       .object({
-        data: zodMongooseCustomType('Long' as any),
+        data: mongooseZodCustomType('Long' as any),
       })
       .mongoose();
 

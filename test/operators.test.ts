@@ -1,7 +1,7 @@
 import {MongoMemoryServer} from 'mongodb-memory-server';
 import M from 'mongoose';
 import {z} from 'zod';
-import {toMongooseSchema, zodMongooseCustomType} from '../src/index.js';
+import {mongooseZodCustomType, toMongooseSchema} from '../src/index.js';
 
 describe('Using MongoDB operators', () => {
   let mongoServer: MongoMemoryServer;
@@ -26,7 +26,7 @@ describe('Using MongoDB operators', () => {
     {type: 'number', schema: z.number(), operator: '$mod', operand: [4, 2]},
     {
       type: 'Buffer',
-      schema: zodMongooseCustomType('Buffer'),
+      schema: mongooseZodCustomType('Buffer'),
       operator: '$lte',
       operand: Buffer.from('data'),
     },
@@ -34,7 +34,7 @@ describe('Using MongoDB operators', () => {
     {type: 'date', schema: z.date(), operator: '$gte', operand: 42},
     {
       type: 'ObjectId',
-      schema: zodMongooseCustomType('ObjectId'),
+      schema: mongooseZodCustomType('ObjectId'),
       operator: '$lt',
       operand: new M.Types.ObjectId(),
     },
