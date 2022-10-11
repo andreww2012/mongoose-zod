@@ -17,12 +17,12 @@
     }
   }
   */
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "@tsconfig/node14/tsconfig.json",
 
   "compilerOptions": {
     "outDir": "./dist",
     "module": "esnext",
-    "target": "es2015",
+    "target": "es2017",
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true,
     "importsNotUsedAsValues": "error",
@@ -34,9 +34,6 @@
   "include": ["src/**/*.ts"],
 
   "ts-node": {
-    "esm": true,
-    "compilerOptions": {
-      "target": "es2017"
-    }
+    "esm": true
   },
 }
