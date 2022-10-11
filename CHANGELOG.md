@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Fixed an erroneous sub schema validation error if one of its fields has `Buffer` type.
+
 ## 0.0.5
 
 - Fix the issue resulting in fields with custom types set via `mongooseZodCustomType` still having `Mixed` type in the resulting schema.
