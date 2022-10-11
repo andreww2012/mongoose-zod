@@ -1,5 +1,5 @@
 import M, {Schema as MongooseSchema, SchemaOptions, SchemaTypeOptions} from 'mongoose';
-import type z from 'zod';
+import z from 'zod';
 import type {ZodSchema} from 'zod';
 import {MongooseZodError} from './errors.js';
 import {ZodMongoose} from './extensions.js';
@@ -271,7 +271,18 @@ const addMongooseSchemaFields = (
     // TODO not really useful
     // For strict validation of objects:
     schemaToValidate = isZodType(schemaToValidate, 'ZodObject')
-      ? schemaToValidate.strict()
+      ? z.preprocess((obj) => {
+          if (!obj || typeof obj !== 'object') {
+            return obj;
+          }
+          const objCopy: Record<string, unknown> = {...obj};
+          for (const [k, v] of Object.entries(objCopy)) {
+            if (v instanceof M.mongo.Binary) {
+              objCopy[k] = v.buffer;
+            }
+          }
+          return objCopy;
+        }, schemaToValidate.strict())
       : schemaToValidate;
     const valueToParse =
       value &&
