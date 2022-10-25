@@ -57,7 +57,7 @@ describe('Mongoose types', () => {
     },
   );
 
-  it('Allows to work with Buffer type', async () => {
+  it('Returns Buffer instead of Binary if a field has Buffer type', async () => {
     const Model = M.model(
       'test',
       toMongooseSchema(z.object({data: mongooseZodCustomType('Buffer')}).mongoose()),
@@ -74,7 +74,24 @@ describe('Mongoose types', () => {
     expect(doc?.data).toBeInstanceOf(Buffer);
   });
 
-  it('Allows to work with Buffer type in sub schemas', async () => {
+  it('Returns Buffer instead of Binary if a field has Buffer type when using .lean()', async () => {
+    const Model = M.model(
+      'test',
+      toMongooseSchema(z.object({data: mongooseZodCustomType('Buffer')}).mongoose()),
+    );
+
+    const docRaw = new Model();
+    docRaw.data = Buffer.from('Hello world!');
+
+    expect(docRaw.data).toBeInstanceOf(Buffer);
+
+    await docRaw.save();
+    const doc = await Model.findOne({_id: docRaw._id}).lean();
+
+    expect(doc?.data).toBeInstanceOf(Buffer);
+  });
+
+  it('Correctly works with Buffer type in sub schemas', async () => {
     const Model = M.model(
       'test',
       toMongooseSchema(z.object({a: z.object({data: mongooseZodCustomType('Buffer')})}).mongoose()),
@@ -86,8 +103,33 @@ describe('Mongoose types', () => {
     expect(docRaw.a.data).toBeInstanceOf(Buffer);
 
     await docRaw.save();
-    const doc = await Model.findOne({_id: docRaw._id});
+    const doc = await Model.findOne({_id: docRaw._id}).lean();
 
     expect(doc?.a.data).toBeInstanceOf(Buffer);
+  });
+
+  it('Do not overwrites custom getter set on a field having Buffer type', async () => {
+    const Model = M.model(
+      'test',
+      toMongooseSchema(
+        z.object({data: mongooseZodCustomType('Buffer')}).mongoose({
+          typeOptions: {
+            data: {
+              get: (v) => v,
+            },
+          },
+        }),
+      ),
+    );
+
+    const docRaw = new Model();
+    docRaw.data = Buffer.from('Hello world!');
+
+    expect(docRaw.data).toBeInstanceOf(Buffer);
+
+    await docRaw.save();
+    const doc = await Model.findOne({_id: docRaw._id}).lean();
+
+    expect(doc?.data).toBeInstanceOf(M.mongo.Binary);
   });
 });

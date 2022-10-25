@@ -109,6 +109,7 @@ Since the overarching goal of this library is to simplify working with mongoose 
 - Sub schemas (which are automatically created for fields with `ZodObject` type) **won't** be set an `_id` property.
 - All array field **will not allow** casting of non-array values to arrays.
 - Casting is also **disabled** for types like number, string, boolean and date and **cannot** be re-enabled.
+- For all the fields of `Buffer` type an actual `Buffer` instance (and not mongodb's `Binary`) will be returned after using `.lean()` ([see here why it's not the case in mongoose](https://github.com/Automattic/mongoose/issues/7964#issuecomment-509698515)). This is achieved by defining a getter on such fields which pulls out a buffer from a `Binary`. Such getters can be overriden, and it is also exported under `bufferMongooseGetter` name.
 
 But that's not all.
 
@@ -161,7 +162,9 @@ You can **override** certain options if you wish:
 const user = await User.findOne({ ... }).lean({ virtuals: false, anyOtherOption: true });
 ```
 
-Note: if you pass to .lean() anything but an object or null, these options won't be set.
+Notes:
+* If you pass to `.lean()` anything but an object or `null`, these options won't be set.
+* The described behaviour is achieved by defining a custom `lean` query method. If you also define a query method with `lean` name, it will override our version.
 
 ## FAQ
 
@@ -245,7 +248,7 @@ Instead `alias`, simply use a virtual (which is what mongoose aliases actually a
 
 - Types named `MongooseZodBaseClass` are custom types inherited from `BaseClass` with the only function overloaded being `cast` which disables casting altogether.
 - If the zod type is not supported, a `MongooseZodError` error will be thrown upon schema creation.
-- The same error will be thrown when when the zod type as a whole is supported, but this specific case it describes is not. Some examples: `Infinity` number literal, `bigint` literal, empty enums.
+- The same error will be thrown when the zod type as a whole is supported, but this specific case it describes is not. Some examples: `Infinity` number literal, `bigint` literal, empty enums.
 
 ## ⚠️ Caveats
 

@@ -67,3 +67,6 @@ export const registerCustomMongooseZodTypes = (): void => {
     MongooseZodString,
   });
 };
+
+export const bufferMongooseGetter = (value: unknown) =>
+  value instanceof M.mongo.Binary ? value.buffer : value;

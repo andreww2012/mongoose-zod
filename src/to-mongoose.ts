@@ -9,6 +9,7 @@ import {
   MongooseZodDate,
   MongooseZodNumber,
   MongooseZodString,
+  bufferMongooseGetter,
   registerCustomMongooseZodTypes,
 } from './mongoose-helpers.js';
 import {getValidEnumValues, tryImportModule} from './utils.js';
@@ -223,6 +224,11 @@ const addMongooseSchemaFields = (
   } else if (isZodType(zodSchemaFinal, 'ZodAny')) {
     const instanceOfClass = zodInstanceofOriginalClasses.get(zodSchemaFinal);
     fieldType = instanceOfClass || Mixed;
+    // When using .lean(), it returns the inner representation of buffer fields, i.e.
+    // instances of `mongo.Binary`. We can fix this with the getter that actually returns buffers
+    if (instanceOfClass === M.Schema.Types.Buffer && !('get' in commonFieldOptions)) {
+      commonFieldOptions.get = bufferMongooseGetter;
+    }
   } else if (isZodType(zodSchemaFinal, 'ZodEffects')) {
     // `refinement` effects are already unwrapped at this stage
     if (zodSchemaFinal._def.effect.type !== 'refinement') {
