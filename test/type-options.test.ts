@@ -193,7 +193,7 @@ describe('Type options', () => {
     expect((Schema.paths.status as any).defaultValue).toBe(STATUS);
   });
 
-  it('Sets the default value for arrays to undefined unless another value is provided', () => {
+  it('Sets the default value for arrays to `undefined` unless another value is provided', () => {
     const BIRTHDAY_NOT_SET = [1, 1, 1900];
     const zodSchema = z
       .object({
@@ -207,6 +207,28 @@ describe('Type options', () => {
 
     expect((Schema.paths.friends as any).defaultValue).toBe(undefined);
     expect((Schema.paths.birthday as any).defaultValue()).toEqual(BIRTHDAY_NOT_SET);
+  });
+
+  it('Sets the default value for sub schemas to `undefined` unless another value is provided', () => {
+    const BIRTHDAY_NOT_SET = {d: 1, m: 1, y: 1900};
+    const zodSchema = z
+      .object({
+        username: z.string(),
+        fullName: z.object({firstName: z.string(), lastName: z.string()}),
+        birthday: z
+          .object({
+            d: z.number().int().min(1).max(31),
+            m: z.number().int().min(1).max(12),
+            y: z.number().int().min(1900).max(2010),
+          })
+          .default(BIRTHDAY_NOT_SET),
+      })
+      .mongoose();
+
+    const Schema = toMongooseSchema(zodSchema);
+
+    expect((Schema.paths.fullName as any).defaultValue).toBe(undefined);
+    expect((Schema.paths.birthday as any).defaultValue).toEqual(BIRTHDAY_NOT_SET);
   });
 
   it('Overwrites the default value set via .default() by the value set via type options', () => {

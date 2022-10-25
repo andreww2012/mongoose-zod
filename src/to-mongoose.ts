@@ -65,7 +65,12 @@ const addMongooseSchemaFields = (
     required: isRequired,
     ...('default' in schemaProperties
       ? {default: schemaProperties.default}
-      : isFieldArray
+      : // `mongoose-lean-defaults` will implicitly set default values on sub schemas.
+      // It will result in sub documents being ALWAYS defined after using `.lean()`
+      // and even optional fields of that schema having `undefined` values.
+      // This looks very weird to me and even broke my production.
+      // You need to explicitly set `default: undefined` to sub schemas to prevent such a behaviour.
+      isFieldArray || isZodType(zodSchemaFinal, 'ZodObject')
       ? {default: undefined}
       : {}),
     ...(isFieldArray && {castNonArrays: false}),
