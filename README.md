@@ -11,7 +11,7 @@ Declaring mongoose schemas in TypeScript environment has always been tricky in t
 
 This library aims to solve many of the aforementioned problems utilizing `zod` as a schema authoring tool.
 
-## Usage
+## Installation
 
 ⚠️ Please **do not forget** to read the [caveats](#caveats) section when you're done with the main documentation.
 
@@ -21,13 +21,18 @@ Install the package from [npm](https://www.npmjs.com/package/mongoose-zod):
 npm i mongoose-zod
 ```
 
-⚠️ You also need to install peer dependencies being `zod` and `mongoose`:
+### ⚠️ Important installation notes
 
-```shell
-npm i mongoose zod
-```
+This package has [peer dependencies](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#peerdependencies) being `mongoose` and `zod` as well as [optional peer dependencies](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#peerdependenciesmeta) being a number of mongoose plugins which automatically added to schemas created with `mongoose-zod` if found.
 
-Then, define a schema and use it as follows:
+- Starting from version 7, [NPM automatically installs peer dependencies](https://github.blog/2020-10-13-presenting-v7-0-0-of-the-npm-cli/). Keep an eye on installed peer dependencies' versions!
+- Consequently, you need to **install required peer dependencies yourself** if you're using NPM <7.
+- There was a bug [in some of the 7.x.x versions of NPM resulting in optional peer dependencies being installed automatically too](https://github.com/npm/feedback/discussions/225). Please check if optional peer dependencies were not installed if you don't need them (or use [--legacy-peer-deps flag](https://docs.npmjs.com/cli/v7/using-npm/config#legacy-peer-deps) when installing dependencies or this package to skip installing *all* peer dependencies and then install all required peer dependencies yourself).
+- As of October 2022, the latest NPM version, `8.19.2`, [does NOT remove optional peer dependencies after uninstalling them](https://github.com/npm/cli/issues/4737). Which also may mean they will still be considered "found" by `mongoose-zod` even if you uninstalled them. In you encounter such an issue, you need to clean your `package-lock.json` from optional peer dependencies definitions that you have uninstalled and then run `npm i`.
+
+## Usage
+
+Define the schema and use it as follows:
 
 ```ts
 import {z} from 'zod';
