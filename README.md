@@ -266,6 +266,10 @@ import 'mongoose-zod';
 ...
 ```
 
+### Prefer `ZodRecord` over `ZodMap`
+
+We highly recommend that you do not use `ZodMap`. `Map` values are problematic to serialize and they're stored as [BSON](https://www.mongodb.com/json-and-bson) objects anyway, therefore now can be safely replaced with `ZodRecord`. *(Well, actually, prefer arrays over records, unless you really need them).*
+
 ## License
 
 See LICENSE.md.
