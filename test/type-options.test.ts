@@ -39,19 +39,41 @@ describe('Type options', () => {
     expect(Schema.paths.registered?.options).toMatchObject(REGISTERED_OPTIONS);
   });
 
+  it('Merges type options set for a specific field with multiple calls of .mongooseTypeOptions()', () => {
+    const OPTIONS_1 = {default: true};
+    const OPTIONS_2 = {index: true, default: false, alias: 'r'};
+    const zodSchema = z
+      .object({
+        username: z.string(),
+        registered: z
+          .boolean()
+          .mongooseTypeOptions({...OPTIONS_1})
+          .mongooseTypeOptions({...OPTIONS_2}),
+      })
+      .mongoose();
+
+    const Schema = toMongooseSchema(zodSchema);
+
+    expect(Schema.paths.registered?.options).toMatchObject({...OPTIONS_1, ...OPTIONS_2});
+  });
+
   it('Merges type options set in .mongooseTypeOptions() with the ones set in .mongoose()', () => {
     const USERNAME_OPTIONS_1 = {unique: true};
-    const USERNAME_OPTIONS_2 = {unique: false, index: true, alias: 'u'};
+    const USERNAME_OPTIONS_2 = {index: true, alias: 'u'};
+    const USERNAME_OPTIONS_3 = {unique: false};
     const REGISTERED_OPTIONS_1 = {index: true, default: false};
     const REGISTERED_OPTIONS_2 = {default: undefined};
     const zodSchema = z
       .object({
-        username: z.string().mongooseTypeOptions({...USERNAME_OPTIONS_1}),
+        username: z
+          .string()
+          .mongooseTypeOptions({...USERNAME_OPTIONS_1})
+          .mongooseTypeOptions({...USERNAME_OPTIONS_2}),
         registered: z.boolean().mongooseTypeOptions({...REGISTERED_OPTIONS_1}),
       })
       .mongoose({
         typeOptions: {
-          username: {...USERNAME_OPTIONS_2},
+          username: {...USERNAME_OPTIONS_3},
           registered: {...REGISTERED_OPTIONS_2},
         },
       });
@@ -61,6 +83,7 @@ describe('Type options', () => {
     expect(Schema.paths.username?.options).toMatchObject({
       ...USERNAME_OPTIONS_1,
       ...USERNAME_OPTIONS_2,
+      ...USERNAME_OPTIONS_3,
     });
     expect(Schema.paths.registered?.options).toMatchObject({
       ...REGISTERED_OPTIONS_1,

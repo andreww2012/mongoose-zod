@@ -123,7 +123,10 @@ if (!z.ZodObject.prototype.mongoose) {
 
 if (!z.ZodType.prototype.mongooseTypeOptions) {
   z.ZodType.prototype.mongooseTypeOptions = function (options) {
-    this._def[MongooseTypeOptions] = options;
+    this._def[MongooseTypeOptions] = {
+      ...this._def[MongooseTypeOptions],
+      ...options,
+    };
     return this;
   };
 }
