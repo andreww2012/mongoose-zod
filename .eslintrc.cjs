@@ -14,7 +14,7 @@ module.exports = {
     sourceType: 'module',
   },
 
-  plugins: ['@typescript-eslint', 'optimize-regex', 'sonarjs', 'unicorn'],
+  plugins: ['@typescript-eslint', 'optimize-regex', 'sonarjs', 'unicorn', 'require-extensions'],
 
   extends: [
     'plugin:sonarjs/recommended',
@@ -25,6 +25,7 @@ module.exports = {
 
     'plugin:import/recommended',
     'plugin:import/typescript',
+    'plugin:require-extensions/recommended',
 
     'plugin:@typescript-eslint/recommended',
 

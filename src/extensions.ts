@@ -1,6 +1,6 @@
 import type {SchemaOptions, SchemaTypeOptions} from 'mongoose';
 import {z} from 'zod';
-import type {PartialLaconic} from './utils';
+import type {PartialLaconic} from './utils.js';
 
 export const MongooseTypeOptionsSymbol = Symbol.for('MongooseTypeOptions');
 export const MongooseSchemaOptionsSymbol = Symbol.for('MongooseSchemaOptions');
@@ -91,7 +91,6 @@ declare module 'zod' {
   }
 
   interface ZodObject<
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     T extends z.ZodRawShape,
     UnknownKeys extends 'passthrough' | 'strict' | 'strip' = 'strip',
     Catchall extends z.ZodTypeAny = z.ZodTypeAny,
