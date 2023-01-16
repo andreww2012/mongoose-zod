@@ -2,7 +2,7 @@ import M, {Schema as MongooseSchema, SchemaOptions, SchemaTypeOptions} from 'mon
 import z from 'zod';
 import type {ZodSchema} from 'zod';
 import {MongooseZodError} from './errors.js';
-import {ZodMongoose} from './extensions.js';
+import {MongooseSchemaOptionsSymbol, ZodMongoose} from './extensions.js';
 import {
   MongooseSchemaTypeParameters,
   MongooseZodBoolean,
@@ -40,7 +40,10 @@ const addMongooseSchemaFields = (
   const {schema: zodSchemaFinal, properties: schemaProperties} = unwrapZodSchema(zodSchema);
   const monMetadata = schemaProperties.mongoose || {};
 
-  const monTypeOptionsFromField = schemaProperties.mongooseTypeOptions;
+  const {
+    mongooseTypeOptions: monTypeOptionsFromField,
+    mongooseSchemaOptions: monSchemaOptionsFromField,
+  } = schemaProperties;
   const monTypeOptions = {...monTypeOptionsFromField, ...monTypeOptionsFromSchema};
 
   const isRequired = !schemaProperties.isOptional && !isZodType(zodSchemaFinal, 'ZodNull');
@@ -141,7 +144,10 @@ const addMongooseSchemaFields = (
   if (isZodType(zodSchemaFinal, 'ZodObject')) {
     const relevantSchema = isRoot
       ? monSchema
-      : new MongooseSchema({}, {typeKey, ...monMetadata?.schemaOptions});
+      : new MongooseSchema(
+          {},
+          {...monSchemaOptionsFromField, typeKey, ...monMetadata?.schemaOptions},
+        );
     for (const [key, S] of Object.entries(zodSchemaFinal._def.shape()) as [string, ZodSchema][]) {
       addMongooseSchemaFields(S, relevantSchema, {
         ...context,
@@ -328,6 +334,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
   }
 
   const metadata = rootZodSchema._def;
+  const schemaOptionsFromField = metadata.innerType._def?.[MongooseSchemaOptionsSymbol];
   const schemaOptions = metadata?.mongoose.schemaOptions;
 
   const dp = options?.disablePlugins;
@@ -347,6 +354,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
     {
       id: false,
       minimize: false,
+      ...schemaOptionsFromField,
       ...schemaOptions,
       query: {
         lean(leanOptions?: any) {

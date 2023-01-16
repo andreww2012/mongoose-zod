@@ -1,7 +1,12 @@
 import M from 'mongoose';
 import {z} from 'zod';
 import type {ZodSchema, ZodTypeAny} from 'zod';
-import {MongooseMetadata, MongooseTypeOptions, ZodMongoose} from './extensions.js';
+import {
+  MongooseMetadata,
+  MongooseSchemaOptionsSymbol,
+  MongooseTypeOptionsSymbol,
+  ZodMongoose,
+} from './extensions.js';
 
 export interface ZodTypes {
   ZodAny: z.ZodAny;
@@ -57,6 +62,7 @@ interface SchemaProperties {
   };
   mongoose?: MongooseMetadata<any>;
   mongooseTypeOptions?: M.SchemaTypeOptions<any>;
+  mongooseSchemaOptions?: M.SchemaOptions;
 }
 
 export const unwrapZodSchema = (
@@ -64,8 +70,10 @@ export const unwrapZodSchema = (
   options: {doNotUnwrapArrays?: boolean} = {},
   _properties: SchemaProperties = {},
 ): {schema: ZodSchema<any>; properties: SchemaProperties} => {
-  const monTypeOptions = schema._def[MongooseTypeOptions];
+  const monTypeOptions = schema._def[MongooseTypeOptionsSymbol];
   _properties.mongooseTypeOptions ||= monTypeOptions;
+  const monSchemaOptions = schema._def[MongooseSchemaOptionsSymbol];
+  _properties.mongooseSchemaOptions ||= monSchemaOptions;
 
   if (schema instanceof ZodMongoose) {
     return unwrapZodSchema(schema._def.innerType, options, {

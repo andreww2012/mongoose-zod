@@ -1,22 +1,39 @@
 import M from 'mongoose';
 import {z} from 'zod';
-import type {ZodMongoose} from './extensions';
+import {MongooseZodError} from './errors';
+import {MongooseSchemaOptionsSymbol, ZodMongoose} from './extensions';
 
 type StringLiteral<T> = T extends string ? (string extends T ? never : T) : never;
 
-export const genTimestampsSchema = <CrAt, UpAt>(
-  createdAtField: StringLiteral<CrAt>,
-  updatedAtField: StringLiteral<UpAt>,
-) =>
-  z.object({
-    [createdAtField]: z
-      .date()
-      .default(new Date())
-      .mongooseTypeOptions({immutable: true, index: true}),
-    [updatedAtField]: z.date().default(new Date()).mongooseTypeOptions({index: true}),
+const DateFieldZod = () => z.date().default(new Date());
+
+export const genTimestampsSchema = <CrAt = 'createdAt', UpAt = 'updatedAt'>(
+  createdAtField: StringLiteral<CrAt | 'createdAt'> | null = 'createdAt',
+  updatedAtField: StringLiteral<UpAt | 'updatedAt'> | null = 'updatedAt',
+) => {
+  if (createdAtField != null && updatedAtField != null && createdAtField === updatedAtField) {
+    throw new MongooseZodError('`createdAt` and `updatedAt` fields must be different');
+  }
+
+  const schema = z.object({
+    ...(createdAtField != null && {
+      [createdAtField]: DateFieldZod().mongooseTypeOptions({immutable: true, index: true}),
+    }),
+    ...(updatedAtField != null && {
+      [updatedAtField]: DateFieldZod().mongooseTypeOptions({index: true}),
+    }),
   } as {
-    [_ in StringLiteral<CrAt | UpAt>]: z.ZodDefault<z.ZodDate>;
+    [_ in StringLiteral<NonNullable<CrAt | UpAt>>]: z.ZodDefault<z.ZodDate>;
   });
+  schema._def[MongooseSchemaOptionsSymbol] = {
+    ...schema._def[MongooseSchemaOptionsSymbol],
+    timestamps: {
+      createdAt: createdAtField == null ? false : createdAtField,
+      updatedAt: updatedAtField == null ? false : updatedAtField,
+    },
+  };
+  return schema;
+};
 
 export type MongooseSchemaTypeParameters<
   T,

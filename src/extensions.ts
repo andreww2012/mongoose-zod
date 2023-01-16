@@ -2,7 +2,8 @@ import type {SchemaOptions, SchemaTypeOptions} from 'mongoose';
 import {z} from 'zod';
 import type {PartialLaconic} from './utils';
 
-export const MongooseTypeOptions = Symbol.for('MongooseTypeOptions');
+export const MongooseTypeOptionsSymbol = Symbol.for('MongooseTypeOptions');
+export const MongooseSchemaOptionsSymbol = Symbol.for('MongooseSchemaOptions');
 
 export interface MongooseMetadata<
   DocType,
@@ -78,7 +79,8 @@ export class ZodMongoose<
 
 declare module 'zod' {
   interface ZodTypeDef {
-    [MongooseTypeOptions]?: SchemaTypeOptions<any>;
+    [MongooseTypeOptionsSymbol]?: SchemaTypeOptions<any>;
+    [MongooseSchemaOptionsSymbol]?: SchemaOptions;
   }
 
   interface ZodSchema {
@@ -123,8 +125,8 @@ if (!z.ZodObject.prototype.mongoose) {
 
 if (!z.ZodType.prototype.mongooseTypeOptions) {
   z.ZodType.prototype.mongooseTypeOptions = function (options) {
-    this._def[MongooseTypeOptions] = {
-      ...this._def[MongooseTypeOptions],
+    this._def[MongooseTypeOptionsSymbol] = {
+      ...this._def[MongooseTypeOptionsSymbol],
       ...options,
     };
     return this;
