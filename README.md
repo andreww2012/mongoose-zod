@@ -255,7 +255,16 @@ Instead `alias`, simply use a virtual (which is what mongoose aliases actually a
 - If the zod type is not supported, a `MongooseZodError` error will be thrown upon schema creation.
 - The same error will be thrown when the zod type as a whole is supported, but this specific case it describes is not. Some examples: `Infinity` number literal, `bigint` literal, empty enums.
 
-## ⚠️ Caveats
+### How do I access the data set by `.mongooseTypeOptions/.mongoose`?
+
+We expose `MongooseTypeOptionsSymbol` and `MongooseSchemaOptionsSymbol` symbols respectively that you can use to get to the data set with the respective methods in the following way:
+
+```ts
+const zodSchema = z.object({ ... }).mongoose({ ... });
+const schemaOptions = zodSchema._def[MongooseSchemaOptionsSymbol];
+```
+
+## ⚠️ Caveats ⚠️
 
 ### I get the error: `.mongooseTypeOptions/.mongoose is not a function`
 
@@ -263,6 +272,27 @@ This error indicates that zod extensions this package adds have not been registe
 
 ```ts
 import 'mongoose-zod';
+...
+```
+
+
+### Be careful when using shared schemas with `.mongooseTypeOptions/.mongoose`
+
+If the schema of multiple fields is structurally the same, we highly recommend that you do NOT create a shared schema. Instead, create a factory, because the data attached with `.mongooseTypeOptions/.mongoose` will also be shared, and that's not always what you want.
+
+```ts
+// ❌ DON'T do:
+const PositiveInt = z.number().int().min(1);
+... // somewhere in the schema definition:
+  userId: PositiveInt.mongooseTypeOptions({ index: true}),
+  country: PositiveInt, // surprise, this field will have "index: true" as well!
+...
+
+// ✅ do:
+const PositiveInt = () => z.number().int().min(1);
+...
+  userId: PositiveInt().mongooseTypeOptions({ index: true}),
+  country: PositiveInt(),
 ...
 ```
 
