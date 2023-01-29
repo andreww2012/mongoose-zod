@@ -220,35 +220,6 @@ describe('Schema options', () => {
       });
     });
 
-    describe('`unknownKeys` option is set to `strip-unless-overridden-or-root`', () => {
-      it('Sets `strict: throw` on a root schema when `unknownKeys` is set to `strip-unless-overridden-or-root`', () => {
-        const Schema = toMongooseSchema(getOneLevelSchema(), {
-          unknownKeys: 'strip-unless-overridden-or-root',
-        });
-        expect((Schema as any)._userProvidedOptions).toMatchObject({
-          strict: 'throw',
-        });
-      });
-
-      it('Sets `strict: true` on a sub schema when `unknownKeys` is set to `strip-unless-overridden-or-root`', () => {
-        const Schema = toMongooseSchema(getSchemaWithSubSchema(), {
-          unknownKeys: 'strip-unless-overridden-or-root',
-        });
-        expect((Schema as any).paths.b.schema._userProvidedOptions).toMatchObject({
-          strict: true,
-        });
-      });
-
-      it('Sets `strict: true` on a sub schema for array when `unknownKeys` is set to `strip-unless-overridden-or-root`', () => {
-        const Schema = toMongooseSchema(getSchemaWithArraySubSchema(), {
-          unknownKeys: 'strip-unless-overridden-or-root',
-        });
-        expect((Schema as any).paths.b.schema._userProvidedOptions).toMatchObject({
-          strict: true,
-        });
-      });
-    });
-
     describe("Integration with zod's .passthrough() and .strict() methods", () => {
       it("Sets `strict: throw` on a sub schema when `unknownKeys` is not passed and zod's `.passthrough()` is used", () => {
         const Schema = toMongooseSchema(
@@ -269,30 +240,10 @@ describe('Schema options', () => {
         });
       });
 
-      it("Sets `strict: false` on a sub schema when `unknownKeys` is set to `strip-unless-overridden-or-root` and zod's `.passthrough()` is used", () => {
-        const Schema = toMongooseSchema(
-          z.object({b: z.object({c: z.date()}).passthrough()}).mongoose(),
-          {unknownKeys: 'strip-unless-overridden-or-root'},
-        );
-        expect((Schema as any).paths.b.schema._userProvidedOptions).toMatchObject({
-          strict: false,
-        });
-      });
-
       it("Sets `strict: throw` on a sub schema when `unknownKeys` is set to `strip-unless-overridden` and zod's `.strict()` is used", () => {
         const Schema = toMongooseSchema(
           z.object({b: z.object({c: z.date()}).strict()}).mongoose(),
           {unknownKeys: 'strip-unless-overridden'},
-        );
-        expect((Schema as any).paths.b.schema._userProvidedOptions).toMatchObject({
-          strict: 'throw',
-        });
-      });
-
-      it("Sets `strict: throw` on a sub schema when `unknownKeys` is set to `strip-unless-overridden-or-root` and zod's `.strict()` is used", () => {
-        const Schema = toMongooseSchema(
-          z.object({b: z.object({c: z.date()}).strict()}).mongoose(),
-          {unknownKeys: 'strip-unless-overridden-or-root'},
         );
         expect((Schema as any).paths.b.schema._userProvidedOptions).toMatchObject({
           strict: 'throw',

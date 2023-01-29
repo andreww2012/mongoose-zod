@@ -13,7 +13,12 @@ import {
   registerCustomMongooseZodTypes,
 } from './mongoose-helpers.js';
 import {getValidEnumValues, tryImportModule} from './utils.js';
-import {isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
+import {
+  SchemaFeatures,
+  isZodType,
+  unwrapZodSchema,
+  zodInstanceofOriginalClasses,
+} from './zod-helpers.js';
 
 const {Mixed: MongooseMixed} = M.Schema.Types;
 const originalMongooseLean = M.Query.prototype.lean;
@@ -24,11 +29,7 @@ const mlvPlugin = tryImportModule('mongoose-lean-virtuals', import.meta);
 const mldPlugin = tryImportModule('mongoose-lean-defaults', import.meta);
 const mlgPlugin = tryImportModule('mongoose-lean-getters', import.meta);
 
-type UnknownKeysHandling =
-  | 'throw'
-  | 'strip'
-  | 'strip-unless-overridden'
-  | 'strip-unless-overridden-or-root';
+export type UnknownKeysHandling = 'throw' | 'strip' | 'strip-unless-overridden';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const getFixedOptionFn = (fn: Function) =>
@@ -36,6 +37,17 @@ const getFixedOptionFn = (fn: Function) =>
     const thisFixed = this && this instanceof M.Document ? this : undefined;
     return fn.apply(thisFixed, args);
   };
+
+const getStrictOptionValue = (
+  unknownKeys: UnknownKeysHandling | undefined,
+  schemaFeatures: SchemaFeatures,
+) => {
+  const isStrictThrow =
+    unknownKeys == null || unknownKeys === 'throw' || schemaFeatures.unknownKeys === 'strict';
+  const isStrictFalse =
+    unknownKeys === 'strip-unless-overridden' && schemaFeatures.unknownKeys === 'passthrough';
+  return isStrictThrow ? 'throw' : !isStrictFalse;
+};
 
 const addMongooseSchemaFields = (
   zodSchema: z.ZodSchema,
@@ -152,18 +164,12 @@ const addMongooseSchemaFields = (
 
   const typeKey = (isRoot ? monSchemaOptions?.typeKey : context.typeKey) ?? 'type';
   if (isZodType(zodSchemaFinal, 'ZodObject')) {
-    const isStrictOverridable =
-      unknownKeys === 'strip-unless-overridden' ||
-      unknownKeys === 'strip-unless-overridden-or-root';
-    const isStrictThrow =
-      unknownKeys == null || unknownKeys === 'throw' || schemaFeatures.unknownKeys === 'strict';
-    const isStrictFalse = isStrictOverridable && schemaFeatures.unknownKeys === 'passthrough';
     const relevantSchema = isRoot
       ? monSchema
       : new MongooseSchema(
           {},
           {
-            strict: isStrictThrow ? 'throw' : !isStrictFalse,
+            strict: getStrictOptionValue(unknownKeys, schemaFeatures),
             ...monSchemaOptionsFromField,
             typeKey,
             ...monMetadata?.schemaOptions,
@@ -361,11 +367,6 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
   const addMLDPlugin = mldPlugin && !disablePlugins?.leanDefaults;
   const addMLGPlugin = mlgPlugin && !disablePlugins?.leanGetters;
 
-  const isStrictThrow =
-    unknownKeys == null ||
-    unknownKeys === 'throw' ||
-    unknownKeys === 'strip-unless-overridden-or-root';
-
   const schema = new MongooseSchema<
     z.infer<Schema>,
     any,
@@ -378,7 +379,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
     {
       id: false,
       minimize: false,
-      strict: isStrictThrow ? 'throw' : true,
+      strict: getStrictOptionValue(options?.unknownKeys, unwrapZodSchema(rootZodSchema).features),
       ...schemaOptionsFromField,
       ...schemaOptions,
       query: {

@@ -113,7 +113,8 @@ Since the overarching goal of this library is to simplify working with mongoose 
 - Empty objects **won't be removed** from documents upon saving ([`minimize`](https://mongoosejs.com/docs/guide.html#minimize) is set to `false`).
 - Sub schemas (which are automatically created for fields with `ZodObject` type) **won't** be set an `_id` property.
 - All array field **will not allow** casting of non-array values to arrays.
-- Casting is also **disabled** for types like number, string, boolean and date and **cannot** be re-enabled.
+- Casting is also **disabled** for types like number, string, boolean and date and **cannot** be re-enabled (WARNING: doesn't currently work in array of objects).
+- Schemas will have [`strict`](https://mongoosejs.com/docs/guide.html#strict) option set to `throw` instead of just `true` by default (throws if a document has extraneous fields).
 - For all the fields of `Buffer` type an actual `Buffer` instance (and not mongodb's `Binary`) will be returned after using `.lean()` ([see here why it's not the case in mongoose](https://github.com/Automattic/mongoose/issues/7964#issuecomment-509698515)). This is achieved by defining a getter on such fields which pulls out a buffer from a `Binary`. Such getters can be overriden, and it is also exported under `bufferMongooseGetter` name.
 
 But that's not all.
@@ -170,6 +171,16 @@ const user = await User.findOne({ ... }).lean({ virtuals: false, anyOtherOption:
 Notes:
 * If you pass to `.lean()` anything but an object or `null`, these options won't be set.
 * The described behaviour is achieved by defining a custom `lean` query method. If you also define a query method with `lean` name, it will override our version.
+
+
+### More on schema's [`strict` option](https://mongoosejs.com/docs/guide.html#strict)
+
+By default `mongooze-zod` sets `strict` option to `throw` instead of `true` for a root schema and sub schemas. You can control this behaviour by changing `unknownKeys` option when creating a schema:
+
+- `unknownKeys: 'throw'` is an alias for the default behaviour.
+- `unknownKeys: 'strip'` makes sure `throw` is **always** set to `true` and cannot be overriden via zod schemas.
+- `unknownKeys: 'strip-unless-overridden'` allows to override this schema option with zod's [`.passthrough()`](https://zod.dev/?id=passthrough) and [`strip()`](https://zod.dev/?id=strip).
+- You can **always override** `strict` option value by redefining it in the schema options.
 
 ## FAQ
 
@@ -245,6 +256,7 @@ Instead `alias`, simply use a virtual (which is what mongoose aliases actually a
 | `Type`                                                                | ^                    |
 | `TypeAny`                                                             | ^                    |
 | `Any`                                                                 | depends<sup>3</sup>  |
+| `Array`                                                               | mongoose type corresponding to the unwrapped schema's type |
 | Other types                                                           | not supported        |
 
 <sup>1</sup> Enums with mixed values, e.g. with both string and numbers. Also see [TypeScript docs](https://www.typescriptlang.org/docs/handbook/enums.html#heterogeneous-enums).<br>
@@ -299,6 +311,28 @@ const PositiveInt = () => z.number().int().min(1);
 ### Prefer `ZodRecord` over `ZodMap`
 
 We highly recommend that you do not use `ZodMap`. `Map` values are problematic to serialize and they're stored as [BSON](https://www.mongodb.com/json-and-bson) objects anyway, therefore now can be safely replaced with `ZodRecord`. *(Well, actually, prefer arrays over records, unless you really need them).*
+
+### `ZodObject` as a member of union is not treated like a sub schema
+
+It means that no default schema options will be set (because mongoose's sub schema won't be created in the first place) for a `ZodObject` in a `ZodUnion`. For example this results in unknown keys **are not being** removed. You must use zod's `.strict()`/`.passthrough()` methods to control this behaviour.
+
+### Values in an array of objects still casted by mongoose
+
+Unfortunately I haven't found a way yet to disable casting in this case. PR's and presenting your ideas on how to achieve that are more than welcome!
+
+That's an illustration on what is meant here:
+
+```ts
+const Schema = toMongooseSchema(
+  ...
+  arrayOfObjects: z.object({a: z.string()}).array()
+  ...
+);
+const Model = mongoose.model('model_name', Schema);
+const doc = new Model({ ..., arrayOfObjects: [{a: ''}]}, ...);
+// becomes :(
+{ ..., arrayOfObjects: [{a: undefined}], ...}
+```
 
 ## License
 

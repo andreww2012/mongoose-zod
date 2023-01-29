@@ -53,7 +53,7 @@ export const isZodType = <TypeName extends keyof ZodTypes>(
   return schema.constructor.name === typeName;
 };
 
-interface SchemaFeatures {
+export interface SchemaFeatures {
   default?: any;
   isOptional?: boolean;
   unknownKeys?: 'strict' | 'passthrough';
