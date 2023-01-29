@@ -148,15 +148,13 @@ const addMongooseSchemaFields = (
     commonFieldOptions.required = mzr;
   }
 
-  if (!isRequired) {
-    if (commonFieldOptions.required === true) {
-      throwError("Can't have `required` set to true and `.optional()` used");
-    }
-  } else {
+  if (isRequired) {
     // eslint-disable-next-line no-lonely-if
     if (commonFieldOptions.required !== true) {
       throwError("Can't have `required` set to anything but true if `.optional()` not used");
     }
+  } else if (commonFieldOptions.required === true) {
+    throwError("Can't have `required` set to true and `.optional()` used");
   }
 
   let fieldType: any;

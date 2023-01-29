@@ -145,7 +145,7 @@ export const mongooseZodCustomType = <T extends keyof typeof M.Types & keyof typ
   const instanceClass = typeName === 'Buffer' ? Buffer : M.Types[typeName];
   const typeClass = M.Schema.Types[typeName];
 
-  type TFixed = T extends 'Buffer' ? BufferConstructor : typeof M.Types[T];
+  type TFixed = T extends 'Buffer' ? BufferConstructor : (typeof M.Types)[T];
 
   const result = z.instanceof(instanceClass, params) as z.ZodType<
     InstanceType<TFixed>,
