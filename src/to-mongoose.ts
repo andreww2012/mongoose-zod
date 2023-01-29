@@ -343,29 +343,34 @@ const addMongooseSchemaFields = (
   });
 };
 
+interface DisableablePlugins {
+  leanVirtuals?: boolean;
+  leanDefaults?: boolean;
+  leanGetters?: boolean;
+}
+
+const isPluginDisabled = (name: keyof DisableablePlugins, option?: DisableablePlugins | true) =>
+  option != null && (option === true || option[name]);
+
 export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
   rootZodSchema: Schema,
   options: {
-    disablePlugins?: {
-      leanVirtuals?: boolean;
-      leanDefaults?: boolean;
-      leanGetters?: boolean;
-    };
+    disablePlugins?: DisableablePlugins | true;
     unknownKeys?: UnknownKeysHandling;
   } = {},
 ) => {
   if (!(rootZodSchema instanceof ZodMongoose)) {
     throw new MongooseZodError('Root schema must be an instance of ZodMongoose');
   }
-  const {disablePlugins, unknownKeys} = options;
+  const {disablePlugins: dp, unknownKeys} = options;
 
   const metadata = rootZodSchema._def;
   const schemaOptionsFromField = metadata.innerType._def?.[MongooseSchemaOptionsSymbol];
   const schemaOptions = metadata?.mongoose.schemaOptions;
 
-  const addMLVPlugin = mlvPlugin && !disablePlugins?.leanVirtuals;
-  const addMLDPlugin = mldPlugin && !disablePlugins?.leanDefaults;
-  const addMLGPlugin = mlgPlugin && !disablePlugins?.leanGetters;
+  const addMLVPlugin = mlvPlugin && !isPluginDisabled('leanVirtuals', dp);
+  const addMLDPlugin = mldPlugin && !isPluginDisabled('leanDefaults', dp);
+  const addMLGPlugin = mlgPlugin && !isPluginDisabled('leanGetters', dp);
 
   const schema = new MongooseSchema<
     z.infer<Schema>,

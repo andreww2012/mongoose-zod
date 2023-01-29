@@ -46,13 +46,25 @@ describe('Plugins', () => {
       spy.mockRestore();
     });
 
-    it('Does not add `mongoose-lean-virtuals` plugin if asked not to', () => {
-      const Schema = toMongooseSchema(z.object({}).mongoose(), {
+    it.each([
+      {
+        how: 'disable plugin only',
         disablePlugins: {leanVirtuals: true},
-      });
+      },
+      {
+        how: 'disable all plugins',
+        disablePlugins: true as const,
+      },
+    ])(
+      'Does not add `mongoose-lean-virtuals` plugin if asked not to ($how)',
+      ({disablePlugins}) => {
+        const Schema = toMongooseSchema(z.object({}).mongoose(), {
+          disablePlugins,
+        });
 
-      expect(getSchemaPlugins(Schema)).not.toContain(importModule('mongoose-lean-virtuals'));
-    });
+        expect(getSchemaPlugins(Schema)).not.toContain(importModule('mongoose-lean-virtuals'));
+      },
+    );
 
     const UserWithVirtual = M.model(
       'UserWithVirtual',
@@ -105,13 +117,25 @@ describe('Plugins', () => {
       spy.mockRestore();
     });
 
-    it('Does not add `mongoose-lean-defaults` plugin if asked not to', () => {
-      const Schema = toMongooseSchema(z.object({}).mongoose(), {
+    it.each([
+      {
+        how: 'disable plugin only',
         disablePlugins: {leanDefaults: true},
-      });
+      },
+      {
+        how: 'disable all plugins',
+        disablePlugins: true as const,
+      },
+    ])(
+      'Does not add `mongoose-lean-defaults` plugin if asked not to ($how)',
+      ({disablePlugins}) => {
+        const Schema = toMongooseSchema(z.object({}).mongoose(), {
+          disablePlugins,
+        });
 
-      expect(getSchemaPlugins(Schema)).not.toContain(importModule('mongoose-lean-defaults'));
-    });
+        expect(getSchemaPlugins(Schema)).not.toContain(importModule('mongoose-lean-defaults'));
+      },
+    );
 
     const UserWithNoDefault = M.model(
       'UserWithNoDefault',
@@ -173,9 +197,18 @@ describe('Plugins', () => {
       spy.mockRestore();
     });
 
-    it('Does not add `mongoose-lean-getters` plugin if asked not to', () => {
-      const Schema = toMongooseSchema(z.object({}).mongoose(), {
+    it.each([
+      {
+        how: 'disable plugin only',
         disablePlugins: {leanGetters: true},
+      },
+      {
+        how: 'disable all plugins',
+        disablePlugins: true as const,
+      },
+    ])('Does not add `mongoose-lean-getters` plugin if asked not to ($how)', ({disablePlugins}) => {
+      const Schema = toMongooseSchema(z.object({}).mongoose(), {
+        disablePlugins,
       });
 
       expect(getSchemaPlugins(Schema)).not.toContain(importModule('mongoose-lean-getters'));
