@@ -1,3 +1,11 @@
+## 0.1.0
+
+- When using `.lean()`, for fields of `Buffer` type an actual `Buffer` instance is returned instead of `Binary`.
+- Prevent `mongoose-lean-defaults` from setting `undefined` to the missing fields.
+- Merge type options set multiple times with `.mongooseTypeOptions()`.
+- Make sure `genTimestampsSchema` sets the correct `timestamps` schema option in addition.
+- All generated mongoose schemas now have `strict` option set to `throw`. There's an option to override this behaviour for all the schemas or per a schema basis.
+
 ## 0.0.7
 ## 0.0.6
 

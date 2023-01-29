@@ -1,5 +1,5 @@
 {
-  "version": "0.0.7",
+  "version": "0.1.0",
   "name": "mongoose-zod",
   "description": "Create Mongoose schemas using Zod.",
   "scripts": {
