@@ -53,10 +53,11 @@ export const isZodType = <TypeName extends keyof ZodTypes>(
   return schema.constructor.name === typeName;
 };
 
-interface SchemaProperties {
+interface SchemaFeatures {
   default?: any;
   isOptional?: boolean;
   unknownKeys?: 'strict' | 'passthrough';
+  unionSchemaType?: keyof ZodTypes;
   array?: {
     wrapInArrayTimes: number;
     originalArraySchema: z.ZodArray<any>;
@@ -69,16 +70,23 @@ interface SchemaProperties {
 export const unwrapZodSchema = (
   schema: ZodSchema<any>,
   options: {doNotUnwrapArrays?: boolean} = {},
-  _properties: SchemaProperties = {},
-): {schema: ZodSchema<any>; properties: SchemaProperties} => {
+  _features: SchemaFeatures = {},
+): {schema: ZodSchema<any>; features: SchemaFeatures} => {
   const monTypeOptions = schema._def[MongooseTypeOptionsSymbol];
-  _properties.mongooseTypeOptions ||= monTypeOptions;
+  _features.mongooseTypeOptions ||= monTypeOptions;
   const monSchemaOptions = schema._def[MongooseSchemaOptionsSymbol];
-  _properties.mongooseSchemaOptions ||= monSchemaOptions;
+  _features.mongooseSchemaOptions ||= monSchemaOptions;
+
+  if (isZodType(schema, 'ZodUnion')) {
+    const unionSchemaTypes = schema._def.options.map((v: z.ZodSchema) => v.constructor.name);
+    if (new Set(unionSchemaTypes).size === 1) {
+      _features.unionSchemaType ??= unionSchemaTypes[0] as keyof ZodTypes;
+    }
+  }
 
   if (schema instanceof ZodMongoose) {
     return unwrapZodSchema(schema._def.innerType, options, {
-      ..._properties,
+      ..._features,
       mongoose: schema._def.mongoose,
     });
   }
@@ -87,12 +95,12 @@ export const unwrapZodSchema = (
   if (isZodType(schema, 'ZodObject')) {
     const unknownKeys = schema._def.unknownKeys as string;
     if (unknownKeys === 'strict' || unknownKeys === 'passthrough') {
-      return unwrapZodSchema(schema.strip(), options, {..._properties, unknownKeys});
+      return unwrapZodSchema(schema.strip(), options, {..._features, unknownKeys});
     }
   }
 
   if (isZodType(schema, 'ZodOptional')) {
-    return unwrapZodSchema(schema.unwrap(), options, {..._properties, isOptional: true});
+    return unwrapZodSchema(schema.unwrap(), options, {..._features, isOptional: true});
   }
 
   if (isZodType(schema, 'ZodDefault')) {
@@ -101,33 +109,31 @@ export const unwrapZodSchema = (
       options,
       // Only top-most default value ends up being used
       // (in case of `<...>.default(1).default(2)`, `2` will be used as the default value)
-      'default' in _properties
-        ? _properties
-        : {..._properties, default: schema._def.defaultValue()},
+      'default' in _features ? _features : {..._features, default: schema._def.defaultValue()},
     );
   }
 
   if (isZodType(schema, 'ZodBranded') || isZodType(schema, 'ZodNullable')) {
-    return unwrapZodSchema(schema.unwrap(), options, {..._properties});
+    return unwrapZodSchema(schema.unwrap(), options, {..._features});
   }
 
   if (isZodType(schema, 'ZodEffects') && schema._def.effect.type === 'refinement') {
-    return unwrapZodSchema(schema._def.schema, options, _properties);
+    return unwrapZodSchema(schema._def.schema, options, _features);
   }
 
   if (isZodType(schema, 'ZodArray') && !options.doNotUnwrapArrays) {
-    const wrapInArrayTimes = Number(_properties.array?.wrapInArrayTimes || 0) + 1;
+    const wrapInArrayTimes = Number(_features.array?.wrapInArrayTimes || 0) + 1;
     return unwrapZodSchema(schema._def.type, options, {
-      ..._properties,
+      ..._features,
       array: {
-        ..._properties.array,
+        ..._features.array,
         wrapInArrayTimes,
-        originalArraySchema: _properties.array?.originalArraySchema || schema,
+        originalArraySchema: _features.array?.originalArraySchema || schema,
       },
     });
   }
 
-  return {schema, properties: _properties};
+  return {schema, features: _features};
 };
 
 export const zodInstanceofOriginalClasses = new WeakMap<ZodTypeAny, new (...args: any[]) => any>();

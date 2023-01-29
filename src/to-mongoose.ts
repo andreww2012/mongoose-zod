@@ -13,7 +13,10 @@ import {
   registerCustomMongooseZodTypes,
 } from './mongoose-helpers.js';
 import {getValidEnumValues, tryImportModule} from './utils.js';
-import {ZodTypes, isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
+import {isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from './zod-helpers.js';
+
+const {Mixed: MongooseMixed} = M.Schema.Types;
+const originalMongooseLean = M.Query.prototype.lean;
 
 registerCustomMongooseZodTypes();
 
@@ -26,6 +29,13 @@ type UnknownKeysHandling =
   | 'strip'
   | 'strip-unless-overridden'
   | 'strip-unless-overridden-or-root';
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+const getFixedOptionFn = (fn: Function) =>
+  function (this: unknown, ...args: any[]) {
+    const thisFixed = this && this instanceof M.Document ? this : undefined;
+    return fn.apply(thisFixed, args);
+  };
 
 const addMongooseSchemaFields = (
   zodSchema: z.ZodSchema,
@@ -53,17 +63,18 @@ const addMongooseSchemaFields = (
     throw new MongooseZodError(`${noPath ? '' : `Path \`${fieldPath}\`: `}${message}`);
   };
 
-  const {schema: zodSchemaFinal, properties: schemaProperties} = unwrapZodSchema(zodSchema);
-  const monMetadata = schemaProperties.mongoose || {};
+  const {schema: zodSchemaFinal, features: schemaFeatures} = unwrapZodSchema(zodSchema);
+  const monMetadata = schemaFeatures.mongoose || {};
 
   const {
     mongooseTypeOptions: monTypeOptionsFromField,
     mongooseSchemaOptions: monSchemaOptionsFromField,
-  } = schemaProperties;
+    unionSchemaType,
+  } = schemaFeatures;
   const monTypeOptions = {...monTypeOptionsFromField, ...monTypeOptionsFromSchema};
 
-  const isRequired = !schemaProperties.isOptional && !isZodType(zodSchemaFinal, 'ZodNull');
-  const isFieldArray = 'array' in schemaProperties;
+  const isRequired = !schemaFeatures.isOptional && !isZodType(zodSchemaFinal, 'ZodNull');
+  const isFieldArray = 'array' in schemaFeatures;
 
   const mzOptions = [
     ['validate', monTypeOptions.mzValidate],
@@ -82,8 +93,8 @@ const addMongooseSchemaFields = (
 
   const commonFieldOptions: SchemaTypeOptions<any> = {
     required: isRequired,
-    ...('default' in schemaProperties
-      ? {default: schemaProperties.default}
+    ...('default' in schemaFeatures
+      ? {default: schemaFeatures.default}
       : // `mongoose-lean-defaults` will implicitly set default values on sub schemas.
       // It will result in sub documents being ALWAYS defined after using `.lean()`
       // and even optional fields of that schema having `undefined` values.
@@ -96,12 +107,6 @@ const addMongooseSchemaFields = (
     ...monTypeOptions,
   };
 
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  const getFixedOptionFn = (fn: Function) =>
-    function (this: unknown, ...args: any[]) {
-      const thisFixed = this && this instanceof M.Document ? this : undefined;
-      return fn.apply(thisFixed, args);
-    };
   const [[, mzValidate], [, mzRequired]] = mzOptions;
 
   if (mzValidate != null) {
@@ -142,19 +147,8 @@ const addMongooseSchemaFields = (
     }
   }
 
-  const {Mixed} = M.Schema.Types;
   let fieldType: any;
   let errMsgAddendum = '';
-
-  let unionSchemaType: keyof ZodTypes | undefined;
-  if (isZodType(zodSchemaFinal, 'ZodUnion')) {
-    const unionSchemaTypes = zodSchemaFinal._def.options.map(
-      (v: z.ZodSchema) => v.constructor.name,
-    );
-    if (new Set(unionSchemaTypes).size === 1) {
-      unionSchemaType = unionSchemaTypes[0] as keyof ZodTypes;
-    }
-  }
 
   const typeKey = (isRoot ? monSchemaOptions?.typeKey : context.typeKey) ?? 'type';
   if (isZodType(zodSchemaFinal, 'ZodObject')) {
@@ -162,8 +156,8 @@ const addMongooseSchemaFields = (
       unknownKeys === 'strip-unless-overridden' ||
       unknownKeys === 'strip-unless-overridden-or-root';
     const isStrictThrow =
-      unknownKeys == null || unknownKeys === 'throw' || schemaProperties.unknownKeys === 'strict';
-    const isStrictFalse = isStrictOverridable && schemaProperties.unknownKeys === 'passthrough';
+      unknownKeys == null || unknownKeys === 'throw' || schemaFeatures.unknownKeys === 'strict';
+    const isStrictFalse = isStrictOverridable && schemaFeatures.unknownKeys === 'passthrough';
     const relevantSchema = isRoot
       ? monSchema
       : new MongooseSchema(
@@ -208,7 +202,7 @@ const addMongooseSchemaFields = (
       }
       case 'number': {
         fieldType = Number.isNaN(literalValue)
-          ? Mixed
+          ? MongooseMixed
           : Number.isFinite(literalValue)
           ? MongooseZodNumber
           : undefined;
@@ -220,7 +214,7 @@ const addMongooseSchemaFields = (
       }
       case 'object': {
         if (!literalValue) {
-          fieldType = Mixed;
+          fieldType = MongooseMixed;
         }
         errMsgAddendum = 'object literals are not supported';
         break;
@@ -251,17 +245,17 @@ const addMongooseSchemaFields = (
       valuesJsTypes.length === 2 &&
       (['string', 'number'] as const).every((t) => valuesJsTypes.includes(t))
     ) {
-      fieldType = Mixed;
+      fieldType = MongooseMixed;
     } else {
       errMsgAddendum = 'only nonempty native enums with number and strings values are supported';
     }
   } else if (isZodType(zodSchema, 'ZodNaN') || isZodType(zodSchema, 'ZodNull')) {
-    fieldType = Mixed;
+    fieldType = MongooseMixed;
   } else if (isZodType(zodSchemaFinal, 'ZodMap')) {
     fieldType = Map;
   } else if (isZodType(zodSchemaFinal, 'ZodAny')) {
     const instanceOfClass = zodInstanceofOriginalClasses.get(zodSchemaFinal);
-    fieldType = instanceOfClass || Mixed;
+    fieldType = instanceOfClass || MongooseMixed;
     // When using .lean(), it returns the inner representation of buffer fields, i.e.
     // instances of `mongo.Binary`. We can fix this with the getter that actually returns buffers
     if (instanceOfClass === M.Schema.Types.Buffer && !('get' in commonFieldOptions)) {
@@ -282,7 +276,7 @@ const addMongooseSchemaFields = (
     isZodType(zodSchemaFinal, 'ZodTypeAny') ||
     isZodType(zodSchemaFinal, 'ZodType')
   ) {
-    fieldType = Mixed;
+    fieldType = MongooseMixed;
   }
 
   if (isRoot) {
@@ -295,8 +289,8 @@ const addMongooseSchemaFields = (
     throwError(`${typeName} type is not supported${errMsgAddendum ? ` (${errMsgAddendum})` : ''}`);
   }
 
-  if (schemaProperties.array) {
-    for (let i = 0; i < schemaProperties.array.wrapInArrayTimes; i++) {
+  if (schemaFeatures.array) {
+    for (let i = 0; i < schemaFeatures.array.wrapInArrayTimes; i++) {
       fieldType = [fieldType];
     }
   }
@@ -310,7 +304,7 @@ const addMongooseSchemaFields = (
 
   monSchema.paths[addToField]?.validate(function (value: any) {
     let schemaToValidate: ZodSchema<any> =
-      schemaProperties.array?.originalArraySchema || zodSchemaFinal;
+      schemaFeatures.array?.originalArraySchema || zodSchemaFinal;
 
     if (isZodType(schemaToValidate, 'ZodObject')) {
       schemaToValidate = z.preprocess((obj) => {
@@ -342,8 +336,6 @@ const addMongooseSchemaFields = (
     return schemaToValidate.parse(valueToParse), true;
   });
 };
-
-const originalLean = M.Query.prototype.lean;
 
 export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
   rootZodSchema: Schema,
@@ -391,7 +383,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
       ...schemaOptions,
       query: {
         lean(leanOptions?: any) {
-          return originalLean.call(
+          return originalMongooseLean.call(
             this,
             typeof leanOptions === 'object' || leanOptions == null
               ? {
