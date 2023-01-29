@@ -17,17 +17,33 @@ import {ZodTypes, isZodType, unwrapZodSchema, zodInstanceofOriginalClasses} from
 
 registerCustomMongooseZodTypes();
 
+const mlvPlugin = tryImportModule('mongoose-lean-virtuals', import.meta);
+const mldPlugin = tryImportModule('mongoose-lean-defaults', import.meta);
+const mlgPlugin = tryImportModule('mongoose-lean-getters', import.meta);
+
+type UnknownKeysHandling =
+  | 'throw'
+  | 'strip'
+  | 'strip-unless-overridden'
+  | 'strip-unless-overridden-or-root';
+
 const addMongooseSchemaFields = (
   zodSchema: z.ZodSchema,
   monSchema: MongooseSchema,
   context: {
+    unknownKeys?: UnknownKeysHandling;
     fieldsStack?: string[];
     monSchemaOptions?: SchemaOptions;
     monTypeOptions?: SchemaTypeOptions<any>;
     typeKey?: string;
   },
 ): void => {
-  const {fieldsStack = [], monSchemaOptions, monTypeOptions: monTypeOptionsFromSchema} = context;
+  const {
+    fieldsStack = [],
+    monSchemaOptions,
+    monTypeOptions: monTypeOptionsFromSchema,
+    unknownKeys,
+  } = context;
 
   const addToField = fieldsStack.at(-1);
   const fieldPath = fieldsStack.join('.');
@@ -142,11 +158,22 @@ const addMongooseSchemaFields = (
 
   const typeKey = (isRoot ? monSchemaOptions?.typeKey : context.typeKey) ?? 'type';
   if (isZodType(zodSchemaFinal, 'ZodObject')) {
+    const isStrictOverridable =
+      unknownKeys === 'strip-unless-overridden' ||
+      unknownKeys === 'strip-unless-overridden-or-root';
+    const isStrictThrow =
+      unknownKeys == null || unknownKeys === 'throw' || schemaProperties.unknownKeys === 'strict';
+    const isStrictFalse = isStrictOverridable && schemaProperties.unknownKeys === 'passthrough';
     const relevantSchema = isRoot
       ? monSchema
       : new MongooseSchema(
           {},
-          {...monSchemaOptionsFromField, typeKey, ...monMetadata?.schemaOptions},
+          {
+            strict: isStrictThrow ? 'throw' : !isStrictFalse,
+            ...monSchemaOptionsFromField,
+            typeKey,
+            ...monMetadata?.schemaOptions,
+          },
         );
     for (const [key, S] of Object.entries(zodSchemaFinal._def.shape()) as [string, ZodSchema][]) {
       addMongooseSchemaFields(S, relevantSchema, {
@@ -285,22 +312,25 @@ const addMongooseSchemaFields = (
     let schemaToValidate: ZodSchema<any> =
       schemaProperties.array?.originalArraySchema || zodSchemaFinal;
 
-    // TODO not really useful
-    // For strict validation of objects:
-    schemaToValidate = isZodType(schemaToValidate, 'ZodObject')
-      ? z.preprocess((obj) => {
-          if (!obj || typeof obj !== 'object') {
-            return obj;
-          }
-          const objCopy: Record<string, unknown> = {...obj};
-          for (const [k, v] of Object.entries(objCopy)) {
-            if (v instanceof M.mongo.Binary) {
-              objCopy[k] = v.buffer;
+    if (isZodType(schemaToValidate, 'ZodObject')) {
+      schemaToValidate = z.preprocess((obj) => {
+        if (!obj || typeof obj !== 'object') {
+          return obj;
+        }
+        // Do not shallow-copy the object until we find Binary we need to unwrap
+        let objMaybeCopy = obj as Record<string, unknown>;
+        for (const [k, v] of Object.entries(objMaybeCopy)) {
+          if (v instanceof M.mongo.Binary) {
+            if (objMaybeCopy === obj) {
+              objMaybeCopy = {...obj};
             }
+            objMaybeCopy[k] = v.buffer;
           }
-          return objCopy;
-        }, schemaToValidate.strict())
-      : schemaToValidate;
+        }
+        return objMaybeCopy;
+      }, schemaToValidate);
+    }
+
     const valueToParse =
       value &&
       typeof value === 'object' &&
@@ -313,10 +343,6 @@ const addMongooseSchemaFields = (
   });
 };
 
-const mlvPlugin = tryImportModule('mongoose-lean-virtuals', import.meta);
-const mldPlugin = tryImportModule('mongoose-lean-defaults', import.meta);
-const mlgPlugin = tryImportModule('mongoose-lean-getters', import.meta);
-
 const originalLean = M.Query.prototype.lean;
 
 export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
@@ -327,20 +353,26 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
       leanDefaults?: boolean;
       leanGetters?: boolean;
     };
+    unknownKeys?: UnknownKeysHandling;
   } = {},
 ) => {
   if (!(rootZodSchema instanceof ZodMongoose)) {
     throw new MongooseZodError('Root schema must be an instance of ZodMongoose');
   }
+  const {disablePlugins, unknownKeys} = options;
 
   const metadata = rootZodSchema._def;
   const schemaOptionsFromField = metadata.innerType._def?.[MongooseSchemaOptionsSymbol];
   const schemaOptions = metadata?.mongoose.schemaOptions;
 
-  const dp = options?.disablePlugins;
-  const addMLVPlugin = mlvPlugin && !dp?.leanVirtuals;
-  const addMLDPlugin = mldPlugin && !dp?.leanDefaults;
-  const addMLGPlugin = mlgPlugin && !dp?.leanGetters;
+  const addMLVPlugin = mlvPlugin && !disablePlugins?.leanVirtuals;
+  const addMLDPlugin = mldPlugin && !disablePlugins?.leanDefaults;
+  const addMLGPlugin = mlgPlugin && !disablePlugins?.leanGetters;
+
+  const isStrictThrow =
+    unknownKeys == null ||
+    unknownKeys === 'throw' ||
+    unknownKeys === 'strip-unless-overridden-or-root';
 
   const schema = new MongooseSchema<
     z.infer<Schema>,
@@ -354,6 +386,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
     {
       id: false,
       minimize: false,
+      strict: isStrictThrow ? 'throw' : true,
       ...schemaOptionsFromField,
       ...schemaOptions,
       query: {
@@ -376,7 +409,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
     },
   );
 
-  addMongooseSchemaFields(rootZodSchema, schema, {monSchemaOptions: schemaOptions});
+  addMongooseSchemaFields(rootZodSchema, schema, {monSchemaOptions: schemaOptions, unknownKeys});
 
   addMLVPlugin && schema.plugin(mlvPlugin.module);
   addMLDPlugin && schema.plugin(mldPlugin.module?.default);

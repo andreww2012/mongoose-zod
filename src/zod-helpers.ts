@@ -56,6 +56,7 @@ export const isZodType = <TypeName extends keyof ZodTypes>(
 interface SchemaProperties {
   default?: any;
   isOptional?: boolean;
+  unknownKeys?: 'strict' | 'passthrough';
   array?: {
     wrapInArrayTimes: number;
     originalArraySchema: z.ZodArray<any>;
@@ -80,6 +81,14 @@ export const unwrapZodSchema = (
       ..._properties,
       mongoose: schema._def.mongoose,
     });
+  }
+
+  // Remove `strict` or `passthrough` feature - set to strip mode (default)
+  if (isZodType(schema, 'ZodObject')) {
+    const unknownKeys = schema._def.unknownKeys as string;
+    if (unknownKeys === 'strict' || unknownKeys === 'passthrough') {
+      return unwrapZodSchema(schema.strip(), options, {..._properties, unknownKeys});
+    }
   }
 
   if (isZodType(schema, 'ZodOptional')) {
