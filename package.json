@@ -47,7 +47,7 @@
     "bracketSpacing": false,
     "endOfLine": "lf"
   },
-  "devDependencies": {
+  "dependencies": {
     "@tsconfig/node14": "^1.0.3",
     "@types/jest": "^29.4.0",
     "@types/lodash": "^4.14.186",
