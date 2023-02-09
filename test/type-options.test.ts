@@ -1,5 +1,10 @@
 import {z} from 'zod';
-import {MongooseZodError, toMongooseSchema} from '../src/index.js';
+import {
+  MongooseZodError,
+  addMongooseTypeOptions,
+  toMongooseSchema,
+  toZodMongooseSchema,
+} from '../src/index.js';
 
 describe('Type options', () => {
   it('Allows to set type options with .mongoose()', () => {
@@ -23,6 +28,26 @@ describe('Type options', () => {
     expect(Schema.paths.registered?.options).toMatchObject(REGISTERED_OPTIONS);
   });
 
+  it('Allows to set type options with toZodSchema() the same as .mongoose()', () => {
+    const USERNAME_OPTIONS = {unique: true};
+    const REGISTERED_OPTIONS = {index: true, default: false};
+    const zodObject = z.object({
+      username: z.string(),
+      registered: z.boolean(),
+    });
+
+    const zodSchema = toZodMongooseSchema(zodObject, {
+      typeOptions: {
+        username: {...USERNAME_OPTIONS},
+        registered: {...REGISTERED_OPTIONS},
+      },
+    });
+    const Schema = toMongooseSchema(zodSchema);
+
+    expect(Schema.paths.username?.options).toMatchObject(USERNAME_OPTIONS);
+    expect(Schema.paths.registered?.options).toMatchObject(REGISTERED_OPTIONS);
+  });
+
   it('Allows to set type options for a specific field with .mongooseTypeOptions()', () => {
     const USERNAME_OPTIONS = {unique: true};
     const REGISTERED_OPTIONS = {index: true, default: false};
@@ -32,6 +57,22 @@ describe('Type options', () => {
         registered: z.boolean().mongooseTypeOptions({...REGISTERED_OPTIONS}),
       })
       .mongoose();
+
+    const Schema = toMongooseSchema(zodSchema);
+
+    expect(Schema.paths.username?.options).toMatchObject(USERNAME_OPTIONS);
+    expect(Schema.paths.registered?.options).toMatchObject(REGISTERED_OPTIONS);
+  });
+
+  it('Allows to set type options for a specific field with addMognooseTypOptions the same as .mongooseTypeOptions()', () => {
+    const USERNAME_OPTIONS = {unique: true};
+    const REGISTERED_OPTIONS = {index: true, default: false};
+    const zodSchema = toZodMongooseSchema(
+      z.object({
+        username: addMongooseTypeOptions(z.string(), {...USERNAME_OPTIONS}),
+        registered: addMongooseTypeOptions(z.boolean(), {...REGISTERED_OPTIONS}),
+      }),
+    );
 
     const Schema = toMongooseSchema(zodSchema);
 
@@ -154,6 +195,40 @@ describe('Type options', () => {
           }),
       })
       .mongoose();
+
+    const Schema = toMongooseSchema(zodSchema);
+
+    expect(Schema.paths.info?.schema.paths.username?.options).toMatchObject({
+      ...USERNAME_OPTIONS_1,
+      ...USERNAME_OPTIONS_2,
+    });
+    expect(Schema.paths.info?.schema.paths.registered?.options).toMatchObject({
+      ...REGISTERED_OPTIONS_1,
+      ...REGISTERED_OPTIONS_2,
+    });
+  });
+
+  it('Merges type options set in .mongooseTypeOptions() with the ones set in .mongoose() in a sub schema WITH WRAPPER FN', () => {
+    const USERNAME_OPTIONS_1 = {unique: true};
+    const USERNAME_OPTIONS_2 = {unique: false, index: true, alias: 'u'};
+    const REGISTERED_OPTIONS_1 = {index: true, default: false};
+    const REGISTERED_OPTIONS_2 = {default: undefined};
+    const zodSchema = toZodMongooseSchema(
+      z.object({
+        info: toZodMongooseSchema(
+          z.object({
+            username: addMongooseTypeOptions(z.string(), {...USERNAME_OPTIONS_1}),
+            registered: addMongooseTypeOptions(z.boolean(), {...REGISTERED_OPTIONS_1}),
+          }),
+          {
+            typeOptions: {
+              username: {...USERNAME_OPTIONS_2},
+              registered: {...REGISTERED_OPTIONS_2},
+            },
+          },
+        ),
+      }),
+    );
 
     const Schema = toMongooseSchema(zodSchema);
 
