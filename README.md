@@ -280,13 +280,30 @@ const schemaOptions = zodSchema._def[MongooseSchemaOptionsSymbol];
 
 ### I get the error: `.mongooseTypeOptions/.mongoose is not a function`
 
+It is due to that `mongoose-zod` extends the prototype of `z` to chain the functions you are experiencing trouble with.
 This error indicates that zod extensions this package adds have not been registered yet. This may happen when you've used either of these methods but haven't imported anything from `mongoose-zod`. In this case the best strategy would probably be to **import the package** at the entrypoint of your application like that:
-
 ```ts
 import 'mongoose-zod';
 ...
 ```
 
+When this is not possible in your use case, or you prefer a function over an prototype extend you can use the following
+
+```ts
+import {addMongooseTypeOptions, toZodMongooseSchema} from './extensions';
+
+const zodSchema = toZodMongooseSchema(z.object({
+  nickname: addMongooseTypeOptions(z.string().min(1), {unique: true}),
+  friends: z.number().int().min(1).array().optional(),
+}))
+```
+instead of 
+```ts
+const zodSchema = z.object({
+  nickname: z.string().min(1).mongooseTypeOptions({unique: true}),
+  friends: z.number().int().min(1).array().optional(),
+}).mongoose();
+```
 
 ### Be careful when using shared schemas with `.mongooseTypeOptions/.mongoose`
 
