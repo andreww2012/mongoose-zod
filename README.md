@@ -287,7 +287,16 @@ import 'mongoose-zod';
 ...
 ```
 
-When this is not possible in your use case, or you prefer a function over an prototype extend you can use the following
+You can also use the `z` that is included in `mongoose-zod` instead of the `z` from `zod` directly to be sure you have the correct `z` reference
+```ts
+import {z} from 'mongoose-zod';
+
+...
+const userZodSchema = z.object({ ... }).mongoose();
+const UserSchema = toMongooseSchema(userZodSchema);
+```
+
+When this is not possible in your use case, or you prefer a function over a prototype extend you can use the following
 
 ```ts
 import {addMongooseTypeOptions, toZodMongooseSchema} from './extensions';
