@@ -1,5 +1,5 @@
 import type {SchemaOptions, SchemaTypeOptions} from 'mongoose';
-import {z} from 'zod';
+import {ZodObject, z} from 'zod';
 import type {PartialLaconic} from './utils.js';
 
 export const MongooseTypeOptionsSymbol = Symbol.for('MongooseTypeOptions');
@@ -22,7 +22,7 @@ export interface MongooseMetadata<
   >;
 }
 
-interface ZodMongooseDef<
+export interface ZodMongooseDef<
   ZodType extends z.ZodTypeAny,
   DocType,
   TInstanceMethods extends {} = {},
@@ -116,12 +116,25 @@ declare module 'zod' {
   }
 }
 
+export const toZodMongooseSchema = function (zObject: ZodObject<any>, metadata = {}) {
+  return ZodMongoose.create({mongoose: metadata, innerType: zObject});
+};
 if (!z.ZodObject.prototype.mongoose) {
   z.ZodObject.prototype.mongoose = function (metadata = {}) {
     return ZodMongoose.create({mongoose: metadata, innerType: this});
   };
 }
 
+export const addMongooseTypeOptions = function (
+  zObject: z.ZodType,
+  options: SchemaTypeOptions<any, any> | undefined,
+) {
+  zObject._def[MongooseTypeOptionsSymbol] = {
+    ...zObject._def[MongooseTypeOptionsSymbol],
+    ...options,
+  };
+  return zObject;
+};
 if (!z.ZodType.prototype.mongooseTypeOptions) {
   z.ZodType.prototype.mongooseTypeOptions = function (options) {
     this._def[MongooseTypeOptionsSymbol] = {
@@ -176,3 +189,5 @@ declare module 'mongoose' {
       | [MZRequiredFn<ThisType | null>, string];
   }
 }
+
+export {z} from 'zod';
