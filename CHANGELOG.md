@@ -1,3 +1,7 @@
+## 0.1.1
+
+- Added the ability to opt out of zod prototype extension and set the default `toMongooseSchema` options in `setup` function.
+
 ## 0.1.0
 
 - When using `.lean()`, for fields of `Buffer` type an actual `Buffer` instance is returned instead of `Binary`.
