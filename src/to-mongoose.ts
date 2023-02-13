@@ -12,6 +12,8 @@ import {
   bufferMongooseGetter,
   registerCustomMongooseZodTypes,
 } from './mongoose-helpers.js';
+import type {DisableablePlugins, ToMongooseSchemaOptions, UnknownKeysHandling} from './mz-types.js';
+import {setupState} from './setup.js';
 import {getValidEnumValues, tryImportModule} from './utils.js';
 import {
   SchemaFeatures,
@@ -28,8 +30,6 @@ registerCustomMongooseZodTypes();
 const mlvPlugin = tryImportModule('mongoose-lean-virtuals', import.meta);
 const mldPlugin = tryImportModule('mongoose-lean-defaults', import.meta);
 const mlgPlugin = tryImportModule('mongoose-lean-getters', import.meta);
-
-export type UnknownKeysHandling = 'throw' | 'strip' | 'strip-unless-overridden';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 const getFixedOptionFn = (fn: Function) =>
@@ -341,26 +341,36 @@ const addMongooseSchemaFields = (
   });
 };
 
-interface DisableablePlugins {
-  leanVirtuals?: boolean;
-  leanDefaults?: boolean;
-  leanGetters?: boolean;
-}
-
 const isPluginDisabled = (name: keyof DisableablePlugins, option?: DisableablePlugins | true) =>
   option != null && (option === true || option[name]);
 
+const ALL_PLUGINS_DISABLED: Record<keyof DisableablePlugins, true> = {
+  leanDefaults: true,
+  leanGetters: true,
+  leanVirtuals: true,
+};
+
 export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
   rootZodSchema: Schema,
-  options: {
-    disablePlugins?: DisableablePlugins | true;
-    unknownKeys?: UnknownKeysHandling;
-  } = {},
+  options: ToMongooseSchemaOptions = {},
 ) => {
   if (!(rootZodSchema instanceof ZodMongoose)) {
     throw new MongooseZodError('Root schema must be an instance of ZodMongoose');
   }
-  const {disablePlugins: dp, unknownKeys} = options;
+
+  const globalOptions = setupState.options?.defaultToMongooseSchemaOptions || {};
+  const optionsFinal: ToMongooseSchemaOptions = {
+    ...globalOptions,
+    ...options,
+    disablePlugins: {
+      ...(globalOptions.disablePlugins === true
+        ? {...ALL_PLUGINS_DISABLED}
+        : globalOptions.disablePlugins),
+      ...(options.disablePlugins === true ? {...ALL_PLUGINS_DISABLED} : options.disablePlugins),
+    },
+  };
+
+  const {disablePlugins: dp, unknownKeys} = optionsFinal;
 
   const metadata = rootZodSchema._def;
   const schemaOptionsFromField = metadata.innerType._def?.[MongooseSchemaOptionsSymbol];
@@ -382,7 +392,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
     {
       id: false,
       minimize: false,
-      strict: getStrictOptionValue(options?.unknownKeys, unwrapZodSchema(rootZodSchema).features),
+      strict: getStrictOptionValue(unknownKeys, unwrapZodSchema(rootZodSchema).features),
       ...schemaOptionsFromField,
       ...schemaOptions,
       query: {

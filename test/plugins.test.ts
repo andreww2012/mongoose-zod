@@ -2,11 +2,8 @@ import {MongoMemoryServer} from 'mongodb-memory-server';
 import M from 'mongoose';
 import {z} from 'zod';
 import {toMongooseSchema} from '../src/index.js';
-import {tryImportModule} from '../src/utils.js';
 import * as utils from '../src/utils.js';
-
-const getSchemaPlugins = (schema: M.Schema) => (schema as any).plugins.map(({fn}) => fn);
-const importModule = (id: string) => tryImportModule(id, import.meta)?.module;
+import {getSchemaPlugins, importModule} from './shared.js';
 
 const TEST_USERNAME = 'mongoose-zod';
 

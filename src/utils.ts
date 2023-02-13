@@ -10,9 +10,6 @@ export const getValidEnumValues = (obj: any) => {
   return Object.values(filtered);
 };
 
-// Doesn't produce `& Partial<{}>` in resulting type if T has no keys
-export type PartialLaconic<T> = {} extends T ? {} : Partial<T>;
-
 export const tryImportModule = (id: string, importMeta: ImportMeta): {module: any} | null => {
   const require = createRequire(importMeta.url);
   try {

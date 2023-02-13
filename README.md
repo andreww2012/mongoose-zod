@@ -32,6 +32,19 @@ This package has [peer dependencies](https://docs.npmjs.com/cli/v8/configuring-n
 
 ## Usage
 
+Firstly, you may want to perform a set up. Here you can pass your own `z` instance (you can get "our" `z` by importing `z` from this package) or opt out of **adding new functions to zod prototype** altogether. Please only call the setup function at the entrypoint of your application.
+
+```ts
+import {setup, z: theirZ} from 'mongoose-zod';
+import {z: myZ} from 'zod';
+
+setup({z: myZ}); // mongoose-zod will add new functions to the prototype of `myZ`
+// NB: this is only an example of calling `setup` multiple times. In reality,
+// all subsequent `setup` calls will be ignored!
+setup({z: null}); // mongoose-zod will NOT add new functions to the prototype of zod altogether
+setup(); // Equivalent to the default behaviour (also equivalent to `setup({z: theirZ})`).
+```
+
 Define the schema and use it as follows:
 
 ```ts
@@ -43,6 +56,7 @@ export const userZodSchema = z
     // Sub schema
     info: z.object({
       // Define type options like this (NOT recommended - better to use `typeOptions` passed to `.mongoose()` - see FAQ)
+      // [instead `.mongooseTypeOptions()`, you may use `addMongooseTypeOptions` if you opt out of extending zod prototype]
       nickname: z.string().min(1).mongooseTypeOptions({unique: true}),
       birthday: z.tuple([
         z.number().int().min(1900),
@@ -63,6 +77,7 @@ export const userZodSchema = z
   // by providing a schema generator for creating type-safe timestamp fields
   .merge(genTimestampsSchema('crAt', 'upAt'))
   // Define schema options here:
+  // [instead `.mongoose()`, you may use `toZodMongooseSchema` if you opt out of extending zod prototype]
   .mongoose({
     schemaOptions: {
       collection: 'users',
@@ -93,7 +108,7 @@ export const userZodSchema = z
     },
   });
 
-const UserSchema = toMongooseSchema(userZodSchema);
+const UserSchema = toMongooseSchema(userZodSchema, { ...options... });
 
 const User = M.model('User', UserSchema);
 
@@ -103,6 +118,8 @@ const user = new User().toJSON();
 Result:
 
 ![User model instance type](./assets/model-instance-type.png)
+
+`toMongooseSchema` accepts some options in the optional second parameter that control the unknown keys handling and automatic plugin registration. You can read more on this in the next section. Worth nothing that you may set these options **globally**, in the `setup` call.
 
 ## Additional safety measures
 
@@ -143,9 +160,20 @@ const Schema = toMongooseSchema( ... , {
     leanVirtuals: true,
     leanDefaults: true,
     leanGetters: true,
-  },
+  } | true,
 });
 ```
+
+Or set the options globally in the `setup` call (see above for more info on `setup`):
+
+```ts
+setup({
+  ...,
+  defaultToMongooseSchemaOptions: {disablePlugins: true, unknownKeys: 'strip'},
+});
+```
+
+`mongoose-zod` is smart enough to **granually** re-enable certain plugins if all were disabled globally. That means that with this global config, if you specify say `disablePlugins: {leanVirtuals: false}` for a certain schema, only `mongoose-lean-virtuals` plugin will be added to this schema.
 
 The most intriguing thing is that you *won't have to explicitly make them work on every .lean() call*:
 
@@ -156,10 +184,11 @@ const user = await User.findOne({ ... }).lean({
   virtuals: true,
   defaults: true,
   getters: true,
-  // Bonus: this is set regardless of plugins
-  versionKey: false,
+  versionKey: false, // <-- Bonus
 });
 ```
+
+Note that **versionKey: false** is also always set regardless of plugins!
 
 You can **override** certain options if you wish:
 
@@ -169,8 +198,8 @@ const user = await User.findOne({ ... }).lean({ virtuals: false, anyOtherOption:
 ```
 
 Notes:
-* If you pass to `.lean()` anything but an object or `null`, these options won't be set.
-* The described behaviour is achieved by defining a custom `lean` query method. If you also define a query method with `lean` name, it will override our version.
+* If you pass to `.lean()` anything but an object or `null`, these options **won't be set**.
+* The described behaviour is achieved by defining a custom `lean` query method. If you also define a query method with `lean` name, it will **override** our version.
 
 
 ### More on schema's [`strict` option](https://mongoosejs.com/docs/guide.html#strict)
@@ -186,11 +215,12 @@ By default `mongooze-zod` sets `strict` option to `throw` instead of `true` for 
 
 ### What is the recommended way of defining type options?
 
-The example above demonstrates that there are two ways of defining type options for the field: using `.mongooseTypeOptions({ ... })` or `.mongoose({typeOptions: { ... }})`. There's a good reason why two options exist and here is the recipe for their correct usage:
+The example above demonstrates that there are three ways of defining type options for the field: `.mongooseTypeOptions({ ... })`, `.mongoose({typeOptions: { ... }})` or by using a stand-alone function `addMongooseTypeOptions({ ... })`. There's a good reason why these options exist and here is the recipe for their correct usage:
 
 - Use `.mongooseTypeOptions` in shared schemas you're planning to merge/extend/modify (because after you've used `.mongoose()` you won't be able to do any of these operations).
 - Сonsequently, use `.mongoose` elsewhere. It's less verbose and this way you separate field type declarations from field metadata like indexes, custom validators, etc. Moreover, **only here type safety is fully available** for some custom type options we provide.
-- Keep in mind that options defined in `.mongoose` override the ones defined in `.mongooseTypeOptions`.
+- If you opt out of extending the zod prototype, use `addMongooseTypeOptions`.
+- Keep in mind that options defined with `addMongooseTypeOptions` override the ones defined in `.mongooseTypeOptions`, and the ones defined in `.mongoose` take precedence of both of these two methods.
 
 ### How to obtain a schema type and what to do with it?
 
@@ -287,7 +317,7 @@ import 'mongoose-zod';
 ...
 ```
 
-You can also use the `z` that is included in `mongoose-zod` instead of the `z` from `zod` directly to be sure you have the correct `z` reference
+You can also use the `z` that is included in `mongoose-zod` instead of the `z` from `zod` directly to be sure you have the correct `z` reference:
 ```ts
 import {z} from 'mongoose-zod';
 
@@ -296,7 +326,7 @@ const userZodSchema = z.object({ ... }).mongoose();
 const UserSchema = toMongooseSchema(userZodSchema);
 ```
 
-When this is not possible in your use case, or you prefer a function over a prototype extend you can use the following
+When this is not possible in your use case, or you prefer a function over a prototype extend you can use the following:
 
 ```ts
 import {addMongooseTypeOptions, toZodMongooseSchema} from './extensions';

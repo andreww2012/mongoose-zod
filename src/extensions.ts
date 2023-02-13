@@ -1,6 +1,6 @@
 import type {SchemaOptions, SchemaTypeOptions} from 'mongoose';
 import {ZodObject, z} from 'zod';
-import type {PartialLaconic} from './utils.js';
+import type {PartialLaconic} from './types.js';
 
 export const MongooseTypeOptionsSymbol = Symbol.for('MongooseTypeOptions');
 export const MongooseSchemaOptionsSymbol = Symbol.for('MongooseSchemaOptions');
@@ -98,36 +98,59 @@ declare module 'zod' {
     Input = z.objectInputType<T, Catchall>,
   > {
     mongoose: <
-      O extends ZodObject<T, UnknownKeys, Catchall, Output, Input>,
+      ZO extends ZodObject<T, UnknownKeys, Catchall, Output, Input>,
       TInstanceMethods extends {} = {},
       QueryHelpers extends {} = {},
       TStaticMethods extends {} = {},
       TVirtuals extends {} = {},
     >(
-      this: O,
+      this: ZO,
       metadata?: MongooseMetadata<
-        O['_output'],
+        ZO['_output'],
         TInstanceMethods,
         QueryHelpers,
         TStaticMethods,
         TVirtuals
       >,
-    ) => ZodMongoose<O, O['_output'], TInstanceMethods, QueryHelpers, TStaticMethods, TVirtuals>;
+    ) => ZodMongoose<ZO, ZO['_output'], TInstanceMethods, QueryHelpers, TStaticMethods, TVirtuals>;
   }
 }
 
-export const toZodMongooseSchema = function (zObject: ZodObject<any>, metadata = {}) {
+export const toZodMongooseSchema = function <
+  ZO extends ZodObject<any>,
+  TInstanceMethods extends {} = {},
+  QueryHelpers extends {} = {},
+  TStaticMethods extends {} = {},
+  TVirtuals extends {} = {},
+>(
+  zObject: ZO,
+  metadata: MongooseMetadata<
+    ZO['_output'],
+    TInstanceMethods,
+    QueryHelpers,
+    TStaticMethods,
+    TVirtuals
+  > = {},
+) {
   return ZodMongoose.create({mongoose: metadata, innerType: zObject});
 };
-if (!z.ZodObject.prototype.mongoose) {
-  z.ZodObject.prototype.mongoose = function (metadata = {}) {
-    return ZodMongoose.create({mongoose: metadata, innerType: this});
-  };
-}
 
-export const addMongooseTypeOptions = function (
-  zObject: z.ZodType,
-  options: SchemaTypeOptions<any, any> | undefined,
+export const addMongooseToZodPrototype = (toZ: typeof z | null) => {
+  if (toZ === null) {
+    if (z.ZodObject.prototype.mongoose !== undefined) {
+      // @ts-expect-error `mongoose` might not exists despite what the types say
+      delete z.ZodObject.prototype.mongoose;
+    }
+  } else if (toZ.ZodObject.prototype.mongoose === undefined) {
+    toZ.ZodObject.prototype.mongoose = function (metadata = {}) {
+      return toZodMongooseSchema(this, metadata);
+    };
+  }
+};
+
+export const addMongooseTypeOptions = function <T extends z.ZodSchema<any>>(
+  zObject: T,
+  options: SchemaTypeOptions<T['_output']>,
 ) {
   zObject._def[MongooseTypeOptionsSymbol] = {
     ...zObject._def[MongooseTypeOptionsSymbol],
@@ -135,15 +158,19 @@ export const addMongooseTypeOptions = function (
   };
   return zObject;
 };
-if (!z.ZodType.prototype.mongooseTypeOptions) {
-  z.ZodType.prototype.mongooseTypeOptions = function (options) {
-    this._def[MongooseTypeOptionsSymbol] = {
-      ...this._def[MongooseTypeOptionsSymbol],
-      ...options,
+
+export const addMongooseTypeOptionsToZodPrototype = (toZ: typeof z | null) => {
+  if (toZ === null) {
+    if (z.ZodType.prototype.mongooseTypeOptions !== undefined) {
+      // @ts-expect-error `mongoose` might not exists despite what the types say
+      delete z.ZodType.prototype.mongooseTypeOptions;
+    }
+  } else if (toZ.ZodType.prototype.mongooseTypeOptions === undefined) {
+    toZ.ZodType.prototype.mongooseTypeOptions = function (options: SchemaTypeOptions<any, any>) {
+      return addMongooseTypeOptions(this, options);
     };
-    return this;
-  };
-}
+  }
+};
 
 declare module 'mongoose' {
   interface MZValidateFn<T, ThisType> {
