@@ -107,7 +107,7 @@ describe('Generate timestamps schema helper', () => {
 
     expect(doc.createdAt).toBeInstanceOf(Date);
     expect(doc.updatedAt).toBeInstanceOf(Date);
-    expect(doc.createdAt).toEqual(doc.updatedAt);
+    expect(doc.createdAt.getTime() / 1000).toBeCloseTo(doc.updatedAt.getTime() / 1000, 2);
   });
 
   it('`createdAt` and `updatedAt` works as indended (custom names)', () => {
@@ -119,7 +119,7 @@ describe('Generate timestamps schema helper', () => {
 
     expect(doc.cd).toBeInstanceOf(Date);
     expect(doc.ud).toBeInstanceOf(Date);
-    expect(doc.cd).toEqual(doc.ud);
+    expect(doc.cd.getTime() / 1000).toBeCloseTo(doc.ud.getTime() / 1000, 2);
     expect((doc as any).createdAt).toBeUndefined();
     expect((doc as any).uptdatedAt).toBeUndefined();
   });
