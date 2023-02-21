@@ -85,7 +85,7 @@ const addMongooseSchemaFields = (
   } = schemaFeatures;
   const monTypeOptions = {...monTypeOptionsFromField, ...monTypeOptionsFromSchema};
 
-  const isRequired = !schemaFeatures.isOptional && !isZodType(zodSchemaFinal, 'ZodNull');
+  const isRequired = !schemaFeatures.isOptional && !isZodType(zodSchemaFinal, 'ZodNull') && !zodSchema.isNullable();
   const isFieldArray = 'array' in schemaFeatures;
 
   const mzOptions = [
