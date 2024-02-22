@@ -242,21 +242,25 @@ describe('Type options', () => {
     });
   });
 
-  it('Makes field optional if and only if .optional(), .nullish() or both are used', () => {
+  it('Makes field optional if and only if .optional() or .nullish() is used', () => {
     const zodSchema = z
       .object({
         username: z.string(),
         registered: z.boolean().optional(),
         regDate: z.date().nullish(),
         friends: z.array(z.string()).optional().nullish().nullable(),
+        avatar: z.string().nullable(),
       })
       .mongoose();
 
     const Schema = toMongooseSchema(zodSchema);
 
     expect(
-      Object.fromEntries(Object.entries(Schema.paths).map(([k, v]) => [k, v.options.required])),
-    ).toEqual({username: true, registered: false, regDate: false, friends: false});
+      Object.fromEntries(Object.entries(Schema.paths).map(([k, v]) => {
+        const {required} = v.options;
+        return [k, typeof required === 'function' ? false : required]
+      })),
+    ).toEqual({username: true, registered: false, regDate: false, friends: false, avatar: false});
   });
 
   it('Respects the field default value set via the top-most call of .default()', () => {

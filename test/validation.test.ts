@@ -11,7 +11,8 @@ describe('Validation', () => {
 
   it.each([
     ['string', z.string().min(6), 'hello'],
-    ['string (branded)', z.string().min(6).brand(), 'hello'],
+    ['string branded', z.string().min(6).brand(), 'hello'],
+    ['string nullable (passing undefined)', z.string().nullable(), undefined],
     ['number', z.number().int(), 3.14],
     ['boolean', z.boolean(), 1],
     ['date', z.date().min(new Date(1)), new Date(0)],
@@ -22,6 +23,7 @@ describe('Validation', () => {
     ['nan', z.nan(), Number.POSITIVE_INFINITY],
     ['null', z.null(), 'null'],
     ['union', z.union([z.string(), z.number()]), true],
+    ['union w/ a nullable schema (passing undefined)', z.union([z.string().nullable(), z.number()]), undefined],
     ['enum', z.enum(['a', 'b', 'c']), 'd'],
     ['nativeEnum', z.nativeEnum({a: 1, b: 2, c: 3}), 4],
     ['record', z.record(z.string()), {a: 1}],
@@ -56,7 +58,7 @@ describe('Validation', () => {
 
   it.each([
     ['string', z.string().min(6), 'hello world!'],
-    ['string (branded)', z.string().min(6).brand(), 'hello world!'],
+    ['string branded', z.string().min(6).brand(), 'hello world!'],
     ['number', z.number().int(), 3],
     ['boolean', z.boolean(), true],
     ['date', z.date().min(new Date(1)), new Date(2)],
@@ -64,8 +66,10 @@ describe('Validation', () => {
     ['map', z.map(z.string(), z.number()), new Map([['1', 2]])],
     ['nan', z.nan(), Number.NaN],
     ['null', z.null(), null],
-    ['null (undefined)', z.null(), undefined],
+    ['nullable (passing string)', z.string().nullable(), 'hello world!'],
+    ['nullable (passing null)', z.string().nullable(), null],
     ['union', z.union([z.string(), z.number()]), 'hello'],
+    ['union w/ a nullable schema', z.union([z.string().nullable(), z.number()]), null],
     ['enum', z.enum(['a', 'b', 'c']), 'c'],
     ['nativeEnum', z.nativeEnum({a: 1, b: 2, c: 3}), 2],
     ['record', z.record(z.string()), {a: 'b'}],
@@ -96,14 +100,16 @@ describe('Validation', () => {
     ['any', z.any(), {a: [1, '2', [[]]], b: {c: {d: [42, {e: 'f'}]}}}],
     ['unknown', z.any(), {a: [1, '2', [[]]], b: {c: {d: [42, {e: 'f'}]}}}],
   ] as const)(
-    'Does not throw ValidationError if zod validation succeeds for type %s',
+    'Does not throw ValidationError if zod validation succeeds for type "%s"',
     (_, propSchema, value) => {
       const zodSchema = z.object({a: propSchema}).mongoose();
 
-      const Model = M.model('test', toMongooseSchema(zodSchema));
+      const mongooseSchema = toMongooseSchema(zodSchema);
+      const Model = M.model('test', mongooseSchema);
       const instance = new Model({a: value});
 
-      expect(instance.validateSync()).not.toBeInstanceOf(M.Error.ValidationError);
+      const validationResult = instance.validateSync();
+      expect(validationResult).not.toBeInstanceOf(M.Error.ValidationError);
     },
   );
 

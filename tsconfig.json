@@ -21,10 +21,12 @@
 
   "compilerOptions": {
     "outDir": "./dist",
+    "lib": ["es2023"],
     "module": "esnext",
     "target": "es2017",
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true,
+    "ignoreDeprecations": "5.0",
     "importsNotUsedAsValues": "error",
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,

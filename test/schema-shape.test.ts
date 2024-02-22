@@ -70,17 +70,27 @@ describe('Schema shape replication', () => {
   });
 
   it.each([
+    // Basic types
     {zodType: 'number', schema: z.number(), type: 'Number'},
     {zodType: 'string', schema: z.string(), type: 'String'},
     {zodType: 'date', schema: z.date(), type: 'Date'},
     {zodType: 'boolean', schema: z.boolean(), type: 'Boolean'},
+    // Literals
     {zodType: 'string literal', schema: z.literal('hi'), type: 'String'},
     {zodType: 'number literal', schema: z.literal(42), type: 'Number'},
     {zodType: 'boolean literal', schema: z.literal(false), type: 'Boolean'},
+    // Enum
     {zodType: 'zod enum', schema: z.enum(['a', 'b', 'c']), type: 'String'},
     {zodType: 'string native enum', schema: z.nativeEnum(TestStringEnum), type: 'String'},
     {zodType: 'numeric native enum', schema: z.nativeEnum(TestNumericEnum), type: 'Number'},
+    // Brand
     {zodType: 'branded string', schema: z.string().brand(), type: 'String'},
+    // Optional/nullable
+    {zodType: 'nullable string', schema: z.string().nullable(), type: 'String'},
+    {zodType: 'optional string', schema: z.string().optional(), type: 'String'},
+    {zodType: 'nullable optional string', schema: z.string().nullable().optional(), type: 'String'},
+    {zodType: 'nullish string', schema: z.string().nullish(), type: 'String'},
+    // Unions
     {
       zodType: 'union of numbers',
       schema: z.union([z.number().min(5), z.number().max(1)]),

@@ -56,6 +56,7 @@ export const isZodType = <TypeName extends keyof ZodTypes>(
 export interface SchemaFeatures {
   default?: any;
   isOptional?: boolean;
+  isNullable?: boolean;
   unknownKeys?: 'strict' | 'passthrough';
   unionSchemaType?: keyof ZodTypes;
   array?: {
@@ -77,10 +78,43 @@ export const unwrapZodSchema = (
   const monSchemaOptions = schema._def[MongooseSchemaOptionsSymbol];
   _features.mongooseSchemaOptions ||= monSchemaOptions;
 
+  if (
+    isZodType(schema, 'ZodNull') ||
+    (isZodType(schema, 'ZodLiteral') && schema._def.value === null)
+  ) {
+    _features.isNullable = true;
+  }
+
+  if (isZodType(schema, 'ZodNullable')) {
+    return unwrapZodSchema(schema._def.innerType, options, {
+      ..._features,
+      isNullable: true,
+    });
+  }
+
   if (isZodType(schema, 'ZodUnion')) {
-    const unionSchemaTypes = schema._def.options.map((v: z.ZodSchema) => v.constructor.name);
-    if (new Set(unionSchemaTypes).size === 1) {
-      _features.unionSchemaType ??= unionSchemaTypes[0] as keyof ZodTypes;
+    const unionSchemas = schema._def.options as z.ZodSchema[];
+    const unwrappedSchemas = unionSchemas.map((s) => unwrapZodSchema(s, {doNotUnwrapArrays: true}));
+
+    _features.isNullable ||= unwrappedSchemas.some(({features}) => features.isNullable);
+    _features.isOptional ||= unwrappedSchemas.some(({features}) => features.isOptional);
+
+    if (!('default' in _features)) {
+      // TODO use `findLast` with node 18
+      const lastSchemaWithDefaultValue = unwrappedSchemas
+        .filter((v) => 'default' in v.features)
+        .at(-1);
+      if (lastSchemaWithDefaultValue) {
+        _features.default = lastSchemaWithDefaultValue.features.default;
+      }
+    }
+
+    // TODO
+    const uniqueUnionSchemaTypes = [
+      ...new Set(unionSchemas.map((v) => v.constructor.name as keyof ZodTypes)),
+    ];
+    if (uniqueUnionSchemaTypes.length === 1) {
+      _features.unionSchemaType ??= uniqueUnionSchemaTypes[0];
     }
   }
 

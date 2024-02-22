@@ -85,7 +85,8 @@ const addMongooseSchemaFields = (
   } = schemaFeatures;
   const monTypeOptions = {...monTypeOptionsFromField, ...monTypeOptionsFromSchema};
 
-  const isRequired = !schemaFeatures.isOptional && !isZodType(zodSchemaFinal, 'ZodNull');
+  const {isOptional, isNullable} = schemaFeatures;
+  const isRequired = !isOptional;
   const isFieldArray = 'array' in schemaFeatures;
 
   const mzOptions = [
@@ -155,6 +156,17 @@ const addMongooseSchemaFields = (
     }
   } else if (commonFieldOptions.required === true) {
     throwError("Can't have `required` set to true and `.optional()` used");
+  }
+
+  if (isNullable && !isRoot) {
+    const origRequired = commonFieldOptions.required;
+    commonFieldOptions.required = function () {
+      return this[addToField] === null
+        ? false
+        : typeof origRequired === 'function'
+        ? origRequired.call(this)
+        : isRequired;
+    };
   }
 
   let fieldType: any;
@@ -327,6 +339,10 @@ const addMongooseSchemaFields = (
         }
         return objMaybeCopy;
       }, schemaToValidate);
+    }
+
+    if (isNullable) {
+      schemaToValidate = z.nullable(schemaToValidate);
     }
 
     const valueToParse =
