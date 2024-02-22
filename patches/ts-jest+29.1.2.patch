@@ -1,0 +1,13 @@
+diff --git a/node_modules/ts-jest/dist/legacy/compiler/ts-compiler.js b/node_modules/ts-jest/dist/legacy/compiler/ts-compiler.js
+index b87cf62..20e4ad1 100644
+--- a/node_modules/ts-jest/dist/legacy/compiler/ts-compiler.js
++++ b/node_modules/ts-jest/dist/legacy/compiler/ts-compiler.js
+@@ -132,7 +132,7 @@ var TsCompiler = /** @class */ (function () {
+             allowSyntheticDefaultImports = true;
+         }
+         else {
+-            moduleKind = this._ts.ModuleKind.CommonJS;
++            moduleKind = this._compilerOptions.module || this._ts.ModuleKind.CommonJS;
+         }
+         this._compilerOptions = __assign(__assign({}, this._compilerOptions), { allowSyntheticDefaultImports: allowSyntheticDefaultImports, esModuleInterop: esModuleInterop, module: moduleKind });
+         if (this._languageService) {

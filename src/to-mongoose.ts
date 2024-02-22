@@ -1,10 +1,10 @@
-import M, {Schema as MongooseSchema, SchemaOptions, SchemaTypeOptions} from 'mongoose';
+import M, {Schema as MongooseSchema, type SchemaOptions, type SchemaTypeOptions} from 'mongoose';
 import z from 'zod';
 import type {ZodSchema} from 'zod';
 import {MongooseZodError} from './errors.js';
 import {MongooseSchemaOptionsSymbol, ZodMongoose} from './extensions.js';
 import {
-  MongooseSchemaTypeParameters,
+  type MongooseSchemaTypeParameters,
   MongooseZodBoolean,
   MongooseZodDate,
   MongooseZodNumber,
@@ -16,7 +16,7 @@ import type {DisableablePlugins, ToMongooseSchemaOptions, UnknownKeysHandling} f
 import {setupState} from './setup.js';
 import {getValidEnumValues, tryImportModule} from './utils.js';
 import {
-  SchemaFeatures,
+  type SchemaFeatures,
   isZodType,
   unwrapZodSchema,
   zodInstanceofOriginalClasses,

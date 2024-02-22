@@ -107,7 +107,7 @@ const OVERRIDES = [
 
 const TS_ESLINT_RULES_NOT_TYPE_CHECKED = {
   '@typescript-eslint/ban-types': [ERROR, {types: {object: false, '{}': false}}],
-  '@typescript-eslint/consistent-type-imports': [OFF, {fixStyle: 'inline-type-imports'}],
+  '@typescript-eslint/consistent-type-imports': [ERROR, {fixStyle: 'inline-type-imports'}],
   '@typescript-eslint/method-signature-style': ERROR,
   '@typescript-eslint/no-import-type-side-effects': ERROR,
   '@typescript-eslint/no-dynamic-delete': WARNING,

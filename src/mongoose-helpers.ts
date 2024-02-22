@@ -1,7 +1,7 @@
 import M from 'mongoose';
 import {z} from 'zod';
 import {MongooseZodError} from './errors.js';
-import {MongooseSchemaOptionsSymbol, ZodMongoose} from './extensions.js';
+import {MongooseSchemaOptionsSymbol, type ZodMongoose} from './extensions.js';
 
 type StringLiteral<T> = T extends string ? (string extends T ? never : T) : never;
 

@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import M from 'mongoose';
 import {z} from 'zod';
 import type {ZodSchema, ZodTypeAny} from 'zod';
 import {
-  MongooseMetadata,
+  type MongooseMetadata,
   MongooseSchemaOptionsSymbol,
   MongooseTypeOptionsSymbol,
   ZodMongoose,

@@ -115,5 +115,8 @@
     "mongoose-lean-virtuals": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "patch-package": "^8.0.0"
   }
 }
