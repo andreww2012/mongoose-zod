@@ -35,21 +35,22 @@ export const genTimestampsSchema = <CrAt = 'createdAt', UpAt = 'updatedAt'>(
 export type MongooseSchemaTypeParameters<
   T,
   Parameter extends 'InstanceMethods' | 'QueryHelpers' | 'TStaticMethods' | 'TVirtuals',
-> = T extends ZodMongoose<
-  any,
-  any,
-  infer InstanceMethods,
-  infer QueryHelpers,
-  infer TStaticMethods,
-  infer TVirtuals
->
-  ? {
-      InstanceMethods: InstanceMethods;
-      QueryHelpers: QueryHelpers;
-      TStaticMethods: TStaticMethods;
-      TVirtuals: TVirtuals;
-    }[Parameter]
-  : {};
+> =
+  T extends ZodMongoose<
+    any,
+    any,
+    infer InstanceMethods,
+    infer QueryHelpers,
+    infer TStaticMethods,
+    infer TVirtuals
+  >
+    ? {
+        InstanceMethods: InstanceMethods;
+        QueryHelpers: QueryHelpers;
+        TStaticMethods: TStaticMethods;
+        TVirtuals: TVirtuals;
+      }[Parameter]
+    : {};
 
 const noCastFn = (value: any) => value;
 

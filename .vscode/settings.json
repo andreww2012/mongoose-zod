@@ -1,3 +1,10 @@
 {
+  "[javascript][typescript][typescriptreact][vue][css][scss][postcss][html]": {
+    // Note: do NOT set `editor.formatOnSaveMode` to any value with `modifications` -
+    // may incorrectly run prettier with `prettier-disabled` directives
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  },
+
   "typescript.tsdk": "node_modules\\typescript\\lib"
 }

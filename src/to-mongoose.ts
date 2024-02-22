@@ -23,6 +23,7 @@ import {
 } from './zod-helpers.js';
 
 const {Mixed: MongooseMixed} = M.Schema.Types;
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const originalMongooseLean = M.Query.prototype.lean;
 
 registerCustomMongooseZodTypes();
@@ -109,13 +110,13 @@ const addMongooseSchemaFields = (
     ...('default' in schemaFeatures
       ? {default: schemaFeatures.default}
       : // `mongoose-lean-defaults` will implicitly set default values on sub schemas.
-      // It will result in sub documents being ALWAYS defined after using `.lean()`
-      // and even optional fields of that schema having `undefined` values.
-      // This looks very weird to me and even broke my production.
-      // You need to explicitly set `default: undefined` to sub schemas to prevent such a behaviour.
-      isFieldArray || isZodType(zodSchemaFinal, 'ZodObject')
-      ? {default: undefined}
-      : {}),
+        // It will result in sub documents being ALWAYS defined after using `.lean()`
+        // and even optional fields of that schema having `undefined` values.
+        // This looks very weird to me and even broke my production.
+        // You need to explicitly set `default: undefined` to sub schemas to prevent such a behaviour.
+        isFieldArray || isZodType(zodSchemaFinal, 'ZodObject')
+        ? {default: undefined}
+        : {}),
     ...(isFieldArray && {castNonArrays: false}),
     ...monTypeOptions,
   };
@@ -164,8 +165,8 @@ const addMongooseSchemaFields = (
       return this[addToField] === null
         ? false
         : typeof origRequired === 'function'
-        ? origRequired.call(this)
-        : isRequired;
+          ? origRequired.call(this)
+          : isRequired;
     };
   }
 
@@ -182,7 +183,7 @@ const addMongooseSchemaFields = (
             strict: getStrictOptionValue(unknownKeys, schemaFeatures),
             ...monSchemaOptionsFromField,
             typeKey,
-            ...monMetadata?.schemaOptions,
+            ...monMetadata.schemaOptions,
           },
         );
     for (const [key, S] of Object.entries(zodSchemaFinal._def.shape()) as [string, ZodSchema][]) {
@@ -190,7 +191,7 @@ const addMongooseSchemaFields = (
         ...context,
         fieldsStack: [...fieldsStack, key],
         monTypeOptions: monMetadata.typeOptions?.[key],
-        typeKey: monMetadata?.schemaOptions?.typeKey ?? typeKey,
+        typeKey: monMetadata.schemaOptions?.typeKey ?? typeKey,
       });
     }
     if (isRoot) {
@@ -220,8 +221,8 @@ const addMongooseSchemaFields = (
         fieldType = Number.isNaN(literalValue)
           ? MongooseMixed
           : Number.isFinite(literalValue)
-          ? MongooseZodNumber
-          : undefined;
+            ? MongooseZodNumber
+            : undefined;
         break;
       }
       case 'string': {
@@ -319,8 +320,7 @@ const addMongooseSchemaFields = (
   });
 
   monSchema.paths[addToField]?.validate(function (value: any) {
-    let schemaToValidate: ZodSchema<any> =
-      schemaFeatures.array?.originalArraySchema || zodSchemaFinal;
+    let schemaToValidate: ZodSchema = schemaFeatures.array?.originalArraySchema || zodSchemaFinal;
 
     if (isZodType(schemaToValidate, 'ZodObject')) {
       schemaToValidate = z.preprocess((obj) => {
@@ -353,7 +353,9 @@ const addMongooseSchemaFields = (
         ? value.toObject()
         : value;
 
-    return schemaToValidate.parse(valueToParse), true;
+    schemaToValidate.parse(valueToParse);
+
+    return true;
   });
 };
 
@@ -390,7 +392,7 @@ export const toMongooseSchema = <Schema extends ZodMongoose<any, any>>(
 
   const metadata = rootZodSchema._def;
   const schemaOptionsFromField = metadata.innerType._def?.[MongooseSchemaOptionsSymbol];
-  const schemaOptions = metadata?.mongoose.schemaOptions;
+  const {schemaOptions} = metadata.mongoose;
 
   const addMLVPlugin = mlvPlugin && !isPluginDisabled('leanVirtuals', dp);
   const addMLDPlugin = mldPlugin && !isPluginDisabled('leanDefaults', dp);

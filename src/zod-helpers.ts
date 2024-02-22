@@ -69,10 +69,10 @@ export interface SchemaFeatures {
 }
 
 export const unwrapZodSchema = (
-  schema: ZodSchema<any>,
+  schema: ZodSchema,
   options: {doNotUnwrapArrays?: boolean} = {},
   _features: SchemaFeatures = {},
-): {schema: ZodSchema<any>; features: SchemaFeatures} => {
+): {schema: ZodSchema; features: SchemaFeatures} => {
   const monTypeOptions = schema._def[MongooseTypeOptionsSymbol];
   _features.mongooseTypeOptions ||= monTypeOptions;
   const monSchemaOptions = schema._def[MongooseSchemaOptionsSymbol];

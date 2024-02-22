@@ -23,7 +23,11 @@ describe('Validation', () => {
     ['nan', z.nan(), Number.POSITIVE_INFINITY],
     ['null', z.null(), 'null'],
     ['union', z.union([z.string(), z.number()]), true],
-    ['union w/ a nullable schema (passing undefined)', z.union([z.string().nullable(), z.number()]), undefined],
+    [
+      'union w/ a nullable schema (passing undefined)',
+      z.union([z.string().nullable(), z.number()]),
+      undefined,
+    ],
     ['enum', z.enum(['a', 'b', 'c']), 'd'],
     ['nativeEnum', z.nativeEnum({a: 1, b: 2, c: 3}), 4],
     ['record', z.record(z.string()), {a: 1}],

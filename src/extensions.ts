@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/prefer-function-type */
 import type {SchemaOptions, SchemaTypeOptions} from 'mongoose';
 import {ZodObject, z} from 'zod';
 import type {PartialLaconic} from './types.js';
@@ -84,10 +85,10 @@ declare module 'zod' {
   }
 
   interface ZodSchema {
-    mongooseTypeOptions<T extends ZodSchema<any>>(
+    mongooseTypeOptions: <T extends ZodSchema>(
       this: T,
       options: SchemaTypeOptions<T['_output']>,
-    ): T;
+    ) => T;
   }
 
   interface ZodObject<
@@ -137,10 +138,12 @@ export const toZodMongooseSchema = function <
 
 export const addMongooseToZodPrototype = (toZ: typeof z | null) => {
   if (toZ === null) {
+    // eslint-disable-next-line disable-autofix/@typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-condition
     if (z.ZodObject.prototype.mongoose !== undefined) {
       // @ts-expect-error `mongoose` might not exists despite what the types say
       delete z.ZodObject.prototype.mongoose;
     }
+    // eslint-disable-next-line disable-autofix/@typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-condition
   } else if (toZ.ZodObject.prototype.mongoose === undefined) {
     toZ.ZodObject.prototype.mongoose = function (metadata = {}) {
       return toZodMongooseSchema(this, metadata);
@@ -148,7 +151,7 @@ export const addMongooseToZodPrototype = (toZ: typeof z | null) => {
   }
 };
 
-export const addMongooseTypeOptions = function <T extends z.ZodSchema<any>>(
+export const addMongooseTypeOptions = function <T extends z.ZodSchema>(
   zObject: T,
   options: SchemaTypeOptions<T['_output']>,
 ) {
@@ -161,10 +164,12 @@ export const addMongooseTypeOptions = function <T extends z.ZodSchema<any>>(
 
 export const addMongooseTypeOptionsToZodPrototype = (toZ: typeof z | null) => {
   if (toZ === null) {
+    // eslint-disable-next-line disable-autofix/@typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-condition
     if (z.ZodType.prototype.mongooseTypeOptions !== undefined) {
       // @ts-expect-error `mongoose` might not exists despite what the types say
       delete z.ZodType.prototype.mongooseTypeOptions;
     }
+    // eslint-disable-next-line disable-autofix/@typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unnecessary-condition
   } else if (toZ.ZodType.prototype.mongooseTypeOptions === undefined) {
     toZ.ZodType.prototype.mongooseTypeOptions = function (options: SchemaTypeOptions<any, any>) {
       return addMongooseTypeOptions(this, options);

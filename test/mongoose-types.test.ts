@@ -12,7 +12,7 @@ describe('Mongoose types', () => {
   });
 
   afterAll(async () => {
-    await mongoServer?.stop();
+    await mongoServer.stop();
     await M.disconnect();
   });
 

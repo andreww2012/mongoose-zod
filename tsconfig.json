@@ -23,7 +23,7 @@
     "outDir": "./dist",
     "lib": ["es2023"],
     "module": "esnext",
-    "target": "es2017",
+    "target": "es2020",
     "resolveJsonModule": true,
     "noUncheckedIndexedAccess": true,
     "ignoreDeprecations": "5.0",
@@ -33,7 +33,7 @@
     "noErrorTruncation": true
   },
 
-  "include": ["src/**/*.ts"],
+  "include": ["src", "test"],
 
   "ts-node": {
     "esm": true

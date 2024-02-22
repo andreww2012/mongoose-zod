@@ -22,7 +22,7 @@ describe('Schema virtuals', () => {
               return `${this.firstName} ${this.lastName}`;
             },
             set(fullName: string) {
-              const [fn, ln] = fullName.trim().split(' ');
+              const [fn = '', ln = ''] = fullName.trim().split(' ');
               this.firstName = fn;
               this.lastName = ln;
             },

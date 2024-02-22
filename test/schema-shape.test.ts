@@ -14,6 +14,7 @@ enum TestNumericEnum {
 
 enum TestMixedEnum {
   a = 'A',
+  // eslint-disable-next-line @typescript-eslint/no-mixed-enums
   b = 2,
 }
 
@@ -204,7 +205,7 @@ describe('Schema shape replication', () => {
   });
 
   it('Assigns custom external Long type when set with `mongooseZodCustomType()`', () => {
-    // eslint-disable-next-line global-require
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     require('mongoose-long')(M);
 
     const zodSchema = z

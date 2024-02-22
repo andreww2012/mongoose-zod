@@ -16,7 +16,7 @@ describe('Plugins', () => {
   });
 
   afterAll(async () => {
-    await mongoServer?.stop();
+    await mongoServer.stop();
     await M.disconnect();
   });
 
@@ -155,8 +155,8 @@ describe('Plugins', () => {
     it('`mongoose-lean-defaults` plugin works and does not require specifying "defaults: true"', async () => {
       const userRaw = await new UserWithNoDefault({username: TEST_USERNAME}).save();
 
-      expect(userRaw?.username).toBe(TEST_USERNAME);
-      expect(userRaw?.registered).toBe(undefined);
+      expect(userRaw.username).toBe(TEST_USERNAME);
+      expect(userRaw.registered).toBe(undefined);
 
       const user = await UserWithDefault.findOne({username: TEST_USERNAME}).lean();
 
@@ -167,8 +167,8 @@ describe('Plugins', () => {
     it('Allows to override "defaults: true" when using .lean()', async () => {
       const userRaw = await new UserWithNoDefault({username: TEST_USERNAME}).save();
 
-      expect(userRaw?.username).toBe(TEST_USERNAME);
-      expect(userRaw?.registered).toBe(undefined);
+      expect(userRaw.username).toBe(TEST_USERNAME);
+      expect(userRaw.registered).toBe(undefined);
 
       const user = await UserWithDefault.findOne({username: TEST_USERNAME}).lean({defaults: false});
 

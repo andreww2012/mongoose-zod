@@ -12,7 +12,7 @@ describe('Generate timestamps schema helper', () => {
   });
 
   afterAll(async () => {
-    await mongoServer?.stop();
+    await mongoServer.stop();
     await M.disconnect();
   });
 
@@ -165,10 +165,10 @@ describe('Generate timestamps schema helper', () => {
     expect(error?.message).toEqual('`createdAt` and `updatedAt` fields must be different');
   });
 
-  it.only('Does not throw after modifying a document with createdAt', async () => {
+  it('Does not throw after modifying a document with createdAt', async () => {
     const Schema = toMongooseSchema(
       genTimestampsSchema().extend({username: z.string()}).mongoose(),
-      {unknownKeys: 'throw'}
+      {unknownKeys: 'throw'},
     );
 
     const Model = M.model('model', Schema);
@@ -176,6 +176,7 @@ describe('Generate timestamps schema helper', () => {
     const doc = new Model({username: 'mongo'});
     await doc.save();
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const doc2 = (await Model.findOne({_id: doc._id}))!;
     doc2.username = 'mongoose';
     await expect(doc2.save()).toResolve();

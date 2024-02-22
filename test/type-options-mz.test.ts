@@ -13,7 +13,7 @@ describe('Type options provided by mongoose-zod', () => {
   });
 
   afterAll(async () => {
-    await mongoServer?.stop();
+    await mongoServer.stop();
     await M.disconnect();
   });
 

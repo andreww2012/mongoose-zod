@@ -256,10 +256,12 @@ describe('Type options', () => {
     const Schema = toMongooseSchema(zodSchema);
 
     expect(
-      Object.fromEntries(Object.entries(Schema.paths).map(([k, v]) => {
-        const {required} = v.options;
-        return [k, typeof required === 'function' ? false : required]
-      })),
+      Object.fromEntries(
+        Object.entries(Schema.paths).map(([k, v]) => {
+          const {required} = v.options;
+          return [k, typeof required === 'function' ? false : required];
+        }),
+      ),
     ).toEqual({username: true, registered: false, regDate: false, friends: false, avatar: false});
   });
 
