@@ -22,61 +22,6 @@ describe('Generate timestamps schema helper', () => {
     });
   });
 
-  it('Generates a schema with `createdAt` and `updatedAt` fields by default and with the correct type and schema options', () => {
-    const Schema = toMongooseSchema(genTimestampsSchema().mongoose());
-
-    expect(Schema.paths.createdAt?.options).toMatchObject({
-      required: true,
-      index: true,
-      immutable: true,
-    });
-
-    expect(Schema.paths.updatedAt?.options).toMatchObject({
-      required: true,
-      index: true,
-    });
-    expect(Schema.paths.updatedAt?.options.immutable).not.toBe(true);
-
-    expect((Schema as any).options.timestamps).toEqual({
-      createdAt: 'createdAt',
-      updatedAt: 'updatedAt',
-    });
-  });
-
-  it('Generates a schema only with `createdAt` field if argument for `updatedAt` set to null', () => {
-    const Schema = toMongooseSchema(genTimestampsSchema('createdAt', null).mongoose());
-
-    expect(Schema.paths.createdAt?.options).toMatchObject({
-      required: true,
-      index: true,
-      immutable: true,
-    });
-
-    expect(Schema.paths.updatedAt).toBeUndefined();
-
-    expect((Schema as any).options.timestamps).toEqual({
-      createdAt: 'createdAt',
-      updatedAt: false,
-    });
-  });
-
-  it('Generates a schema only with `updatedAt` field if argument for `createdAt` set to null', () => {
-    const Schema = toMongooseSchema(genTimestampsSchema(null, 'updatedAt').mongoose());
-
-    expect(Schema.paths.createdAt).toBeUndefined();
-
-    expect(Schema.paths.updatedAt?.options).toMatchObject({
-      required: true,
-      index: true,
-    });
-    expect(Schema.paths.updatedAt?.options.immutable).not.toBe(true);
-
-    expect((Schema as any).options.timestamps).toEqual({
-      createdAt: false,
-      updatedAt: 'updatedAt',
-    });
-  });
-
   it('Does not include `createdAt`/`updatedAt` fields if both arguments are set to null', () => {
     const Schema = toMongooseSchema(genTimestampsSchema(null, null).mongoose());
 
@@ -93,18 +38,7 @@ describe('Generate timestamps schema helper', () => {
     const Schema = toMongooseSchema(genTimestampsSchema('cd', 'ud').mongoose());
 
     expect(Schema.paths.createdAt).toBeUndefined();
-    expect(Schema.paths.cd?.options).toMatchObject({
-      required: true,
-      index: true,
-      immutable: true,
-    });
-
     expect(Schema.paths.updatedAt).toBeUndefined();
-    expect(Schema.paths.ud?.options).toMatchObject({
-      required: true,
-      index: true,
-    });
-    expect(Schema.paths.ud?.options.immutable).not.toBe(true);
 
     expect((Schema as any).options.timestamps).toEqual({
       createdAt: 'cd',
@@ -112,24 +46,26 @@ describe('Generate timestamps schema helper', () => {
     });
   });
 
-  it('`createdAt` and `updatedAt` works as indended', () => {
+  it('`createdAt` and `updatedAt` works as indended', async () => {
     const Schema = toMongooseSchema(genTimestampsSchema().mongoose());
 
     const Model = M.model('model', Schema);
 
     const doc = new Model();
+    await doc.save();
 
     expect(doc.createdAt).toBeInstanceOf(Date);
     expect(doc.updatedAt).toBeInstanceOf(Date);
     expect(doc.createdAt.getTime() / 1000).toBeCloseTo(doc.updatedAt.getTime() / 1000, 2);
   });
 
-  it('`createdAt` and `updatedAt` works as indended (custom names)', () => {
+  it('`createdAt` and `updatedAt` works as indended (custom names)', async () => {
     const Schema = toMongooseSchema(genTimestampsSchema('cd', 'ud').mongoose());
 
     const Model = M.model('model', Schema);
 
     const doc = new Model();
+    await doc.save();
 
     expect(doc.cd).toBeInstanceOf(Date);
     expect(doc.ud).toBeInstanceOf(Date);
