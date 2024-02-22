@@ -93,7 +93,7 @@
     "zod": "^3.19.1"
   },
   "peerDependencies": {
-    "mongoose": "6.x",
+    "mongoose": "6.x <6.8",
     "mongoose-lean-defaults": "2.x",
     "mongoose-lean-getters": ">=0.3 <1",
     "mongoose-lean-virtuals": ">=0.9 <1",
