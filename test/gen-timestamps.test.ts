@@ -1,7 +1,21 @@
+import {MongoMemoryServer} from 'mongodb-memory-server';
 import M from 'mongoose';
+import {z} from 'zod';
 import {MongooseZodError, genTimestampsSchema, toMongooseSchema} from '../src/index.js';
 
 describe('Generate timestamps schema helper', () => {
+  let mongoServer: MongoMemoryServer;
+
+  beforeAll(async () => {
+    mongoServer = await MongoMemoryServer.create();
+    await M.connect(mongoServer.getUri(), {});
+  });
+
+  afterAll(async () => {
+    await mongoServer?.stop();
+    await M.disconnect();
+  });
+
   beforeEach(() => {
     Object.keys(M.connection.models).forEach((modelName) => {
       delete (M.connection.models as any)[modelName];
@@ -149,5 +163,21 @@ describe('Generate timestamps schema helper', () => {
     }
     expect(error).toBeInstanceOf(MongooseZodError);
     expect(error?.message).toEqual('`createdAt` and `updatedAt` fields must be different');
+  });
+
+  it.only('Does not throw after modifying a document with createdAt', async () => {
+    const Schema = toMongooseSchema(
+      genTimestampsSchema().extend({username: z.string()}).mongoose(),
+      {unknownKeys: 'throw'}
+    );
+
+    const Model = M.model('model', Schema);
+
+    const doc = new Model({username: 'mongo'});
+    await doc.save();
+
+    const doc2 = (await Model.findOne({_id: doc._id}))!;
+    doc2.username = 'mongoose';
+    await expect(doc2.save()).toResolve();
   });
 });

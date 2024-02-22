@@ -5,8 +5,6 @@ import {MongooseSchemaOptionsSymbol, ZodMongoose} from './extensions.js';
 
 type StringLiteral<T> = T extends string ? (string extends T ? never : T) : never;
 
-const DateFieldZod = () => z.date().default(new Date());
-
 export const genTimestampsSchema = <CrAt = 'createdAt', UpAt = 'updatedAt'>(
   createdAtField: StringLiteral<CrAt | 'createdAt'> | null = 'createdAt',
   updatedAtField: StringLiteral<UpAt | 'updatedAt'> | null = 'updatedAt',
@@ -16,14 +14,13 @@ export const genTimestampsSchema = <CrAt = 'createdAt', UpAt = 'updatedAt'>(
   }
 
   const schema = z.object({
-    ...(createdAtField != null && {
-      [createdAtField]: DateFieldZod().mongooseTypeOptions({immutable: true, index: true}),
-    }),
-    ...(updatedAtField != null && {
-      [updatedAtField]: DateFieldZod().mongooseTypeOptions({index: true}),
-    }),
+    // Do not explicitly create `createdAt` and `updatedAt` fields. If we do,
+    // mongoose will ignore the fields with the same names defined in `timestamps`.
+    // Furthermore, if we control timestamps fields manually, the following error occurs upon
+    // saving a document if strict mode is set to `throw`:
+    // "Path `createdAt` is immutable and strict mode is set to throw."
   } as {
-    [_ in StringLiteral<NonNullable<CrAt | UpAt>>]: z.ZodDefault<z.ZodDate>;
+    [_ in StringLiteral<NonNullable<CrAt | UpAt>>]: z.ZodDate;
   });
   schema._def[MongooseSchemaOptionsSymbol] = {
     ...schema._def[MongooseSchemaOptionsSymbol],
