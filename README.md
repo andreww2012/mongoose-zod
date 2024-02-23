@@ -2,10 +2,13 @@
 
 A library which allows to author [mongoose](https://github.com/Automattic/mongoose) ("a MongoDB object modeling tool") schemas using [zod](https://github.com/colinhacks/zod) ("a TypeScript-first schema declaration and validation library").
 
+> [!WARNING]
+> This version and all the previous ones only support mongoose `6.x <6.8`. Please consult `peerDependencies` section of `package.json` for more information.
+
 ## Purpose
 
 Declaring mongoose schemas in TypeScript environment has always been tricky in terms of getting the most out of type safety:
-* You either have to first declare an interface representing a document in MongoDB and then create a schema corresponding to that interface (you get no type safety at all - even the offical mongoose documentation says that "you as the developer are responsible for ensuring that your document interface lines up with your Mongoose schema")
+* You either have to first declare an interface representing a document in MongoDB and then create a schema corresponding to that interface (you get no type safety at all - even the official mongoose documentation says that "you as the developer are responsible for ensuring that your document interface lines up with your Mongoose schema")
 * Or reverse things by using `mongoose.InferSchemaType<typeof schema>` which is far from ideal (impossible to narrow types, doesn't support TS enums, doesn't know about virtuals, has problems with fields named `type`, ...)
 * Finally, you can use [typegoose](https://github.com/typegoose/typegoose) which is based on legacy decorators proposal and generally poorly infers types.
 
@@ -13,15 +16,21 @@ This library aims to solve many of the aforementioned problems utilizing `zod` a
 
 ## Installation
 
-⚠️ Please **do not forget** to read the [caveats](#caveats) section when you're done with the main documentation.
+> [!WARNING]
+> Please **do not forget** to read the [caveats](#caveats) section when you're done with the main documentation.
 
 Install the package from [npm](https://www.npmjs.com/package/mongoose-zod):
 
 ```shell
 npm i mongoose-zod
+pnpm i mongoose-zod
+yarn add mongoose-zod
 ```
 
-### ⚠️ Important installation notes
+<details>
+<summary>
+⚠️ Important installation notes
+</summary>
 
 This package has [peer dependencies](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#peerdependencies) being `mongoose` and `zod` as well as [optional peer dependencies](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#peerdependenciesmeta) being a number of mongoose plugins which automatically added to schemas created with `mongoose-zod` if found.
 
@@ -29,6 +38,8 @@ This package has [peer dependencies](https://docs.npmjs.com/cli/v8/configuring-n
 - Consequently, you need to **install required peer dependencies yourself** if you're using NPM <7.
 - There was a bug [in some of the 7.x.x versions of NPM resulting in optional peer dependencies being installed automatically too](https://github.com/npm/feedback/discussions/225). Please check if optional peer dependencies were not installed if you don't need them (or use [--legacy-peer-deps flag](https://docs.npmjs.com/cli/v7/using-npm/config#legacy-peer-deps) when installing dependencies or this package to skip installing *all* peer dependencies and then install all required peer dependencies yourself).
 - As of October 2022, the latest NPM version, `8.19.2`, [does NOT remove optional peer dependencies after uninstalling them](https://github.com/npm/cli/issues/4737). Which also may mean they will still be considered "found" by `mongoose-zod` even if you uninstalled them. In you encounter such an issue, you need to clean your `package-lock.json` from optional peer dependencies definitions that you have uninstalled and then run `npm i`.
+
+</details>
 
 ## Usage
 
@@ -132,7 +143,7 @@ Since the overarching goal of this library is to simplify working with mongoose 
 - All array field **will not allow** casting of non-array values to arrays.
 - Casting is also **disabled** for types like number, string, boolean and date and **cannot** be re-enabled (WARNING: doesn't currently work in array of objects).
 - Schemas will have [`strict`](https://mongoosejs.com/docs/guide.html#strict) option set to `throw` instead of just `true` by default (throws if a document has extraneous fields).
-- For all the fields of `Buffer` type an actual `Buffer` instance (and not mongodb's `Binary`) will be returned after using `.lean()` ([see here why it's not the case in mongoose](https://github.com/Automattic/mongoose/issues/7964#issuecomment-509698515)). This is achieved by defining a getter on such fields which pulls out a buffer from a `Binary`. Such getters can be overriden, and it is also exported under `bufferMongooseGetter` name.
+- For all the fields of `Buffer` type an actual `Buffer` instance (and not mongodb's `Binary`) will be returned after using `.lean()` ([see here why it's not the case in mongoose](https://github.com/Automattic/mongoose/issues/7964#issuecomment-509698515)). This is achieved by defining a getter on such fields which pulls out a buffer from a `Binary`. Such getters can be overridden, and it is also exported under `bufferMongooseGetter` name.
 
 But that's not all.
 
@@ -173,7 +184,7 @@ setup({
 });
 ```
 
-`mongoose-zod` is smart enough to **granually** re-enable certain plugins if all were disabled globally. That means that with this global config, if you specify say `disablePlugins: {leanVirtuals: false}` for a certain schema, only `mongoose-lean-virtuals` plugin will be added to this schema.
+`mongoose-zod` is smart enough to **gradually** re-enable certain plugins if all were disabled globally. That means that with this global config, if you specify say `disablePlugins: {leanVirtuals: false}` for a certain schema, only `mongoose-lean-virtuals` plugin will be added to this schema.
 
 The most intriguing thing is that you *won't have to explicitly make them work on every .lean() call*:
 
@@ -188,7 +199,7 @@ const user = await User.findOne({ ... }).lean({
 });
 ```
 
-Note that **versionKey: false** is also always set regardless of plugins!
+Note that `versionKey: false` is also always set regardless of plugins!
 
 You can **override** certain options if you wish:
 
@@ -204,10 +215,10 @@ Notes:
 
 ### More on schema's [`strict` option](https://mongoosejs.com/docs/guide.html#strict)
 
-By default `mongooze-zod` sets `strict` option to `throw` instead of `true` for a root schema and sub schemas. You can control this behaviour by changing `unknownKeys` option when creating a schema:
+By default `mongoose-zod` sets `strict` option to `throw` instead of `true` for a root schema and sub schemas. You can control this behaviour by changing `unknownKeys` option when creating a schema:
 
 - `unknownKeys: 'throw'` is an alias for the default behaviour.
-- `unknownKeys: 'strip'` makes sure `throw` is **always** set to `true` and cannot be overriden via zod schemas.
+- `unknownKeys: 'strip'` makes sure `throw` is **always** set to `true` and cannot be overridden via zod schemas.
 - `unknownKeys: 'strip-unless-overridden'` allows to override this schema option with zod's [`.passthrough()`](https://zod.dev/?id=passthrough) and [`strip()`](https://zod.dev/?id=strip).
 - You can **always override** `strict` option value by redefining it in the schema options.
 
@@ -218,7 +229,7 @@ By default `mongooze-zod` sets `strict` option to `throw` instead of `true` for 
 The example above demonstrates that there are three ways of defining type options for the field: `.mongooseTypeOptions({ ... })`, `.mongoose({typeOptions: { ... }})` or by using a stand-alone function `addMongooseTypeOptions({ ... })`. There's a good reason why these options exist and here is the recipe for their correct usage:
 
 - Use `.mongooseTypeOptions` in shared schemas you're planning to merge/extend/modify (because after you've used `.mongoose()` you won't be able to do any of these operations).
-- Сonsequently, use `.mongoose` elsewhere. It's less verbose and this way you separate field type declarations from field metadata like indexes, custom validators, etc. Moreover, **only here type safety is fully available** for some custom type options we provide.
+- Consequently, use `.mongoose` elsewhere. It's less verbose and this way you separate field type declarations from field metadata like indexes, custom validators, etc. Moreover, **only here type safety is fully available** for some custom type options we provide.
 - If you opt out of extending the zod prototype, use `addMongooseTypeOptions`.
 - Keep in mind that options defined with `addMongooseTypeOptions` override the ones defined in `.mongooseTypeOptions`, and the ones defined in `.mongoose` take precedence of both of these two methods.
 
@@ -311,7 +322,7 @@ const schemaOptions = zodSchema._def[MongooseSchemaOptionsSymbol];
 ### I get the error: `.mongooseTypeOptions/.mongoose is not a function`
 
 It is due to that `mongoose-zod` extends the prototype of `z` to chain the functions you are experiencing trouble with.
-This error indicates that zod extensions this package adds have not been registered yet. This may happen when you've used either of these methods but haven't imported anything from `mongoose-zod`. In this case the best strategy would probably be to **import the package** at the entrypoint of your application like that:
+This error indicates that zod extensions this package adds have not been registered yet. This may happen when (1) you've used either of these methods but haven't imported anything from `mongoose-zod` (2) [you're (accidentally) using a different `zod` or `mongoose` instance or version in your code](https://nodejs.org/api/packages.html#dual-package-hazard). In the first case the best strategy would probably be to **import the package** at the entrypoint of your application like that:
 ```ts
 import 'mongoose-zod';
 ...

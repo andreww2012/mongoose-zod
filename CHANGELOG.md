@@ -1,8 +1,11 @@
 ## 0.1.2
 
+*This is likely going to be the last version that supports mongoose < 6.8.*
+
 - Define explicit [entry points via `exports`](https://nodejs.org/api/packages.html#package-entry-points) and avoid using non-standard `module` field.
-- Clarify that `mongoose`@>=6.8 versions are **not** supported due to [the breaking change](https://github.com/Automattic/mongoose/commit/68c0329f908a284e93afafede0bd42bd73c70efa?diff=split#diff-ddef51cacff5851e3055f40c3e1fa31434b58d9fc081e101199136fbd526d34eL10-L13) that removed the first generic parameter of `SchemaOptions` type.
+- Clarify that `mongoose` >=6.8 versions are **not** supported due to [the breaking change](https://github.com/Automattic/mongoose/commit/68c0329f908a284e93afafede0bd42bd73c70efa?diff=split#diff-ddef51cacff5851e3055f40c3e1fa31434b58d9fc081e101199136fbd526d34eL10-L13) that removed the first generic parameter of `SchemaOptions` type.
 - Correctly handle nullable fields (fixes #3).
+- Do not create manually corresponding fields in a schema with `createdAt`/`updatedAt` fields generator as it causes a error upon saving an existing document in a `strict: 'throw'` mode.
 
 ## 0.1.1
 
